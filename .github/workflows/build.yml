@@ -3,10 +3,10 @@ name: Build and Upload Jar
 on:
   push:
     branches:
-      - master
+      - folia-patches
   pull_request:
     branches:
-      - master
+      - folia-patches
 
 jobs:
   build:
