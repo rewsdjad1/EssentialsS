@@ -1,0 +1,1421 @@
+From 75837c4e31e3e2f80a2f820e49c27687caa04268 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Wed, 17 Jul 2024 14:31:45 +0200
+Subject: [PATCH 4/4] Replace scheduler
+
+---
+ .../earth2me/essentials/AsyncTeleport.java    |  2 +-
+ .../essentials/AsyncTimedTeleport.java        | 12 +++----
+ .../java/com/earth2me/essentials/Backup.java  | 18 +++++-----
+ .../earth2me/essentials/BalanceTopImpl.java   |  2 +-
+ .../com/earth2me/essentials/Essentials.java   | 33 +++++++++++++++++--
+ .../essentials/EssentialsBlockListener.java   |  4 +--
+ .../essentials/EssentialsEntityListener.java  |  2 +-
+ .../essentials/EssentialsPlayerListener.java  | 28 ++++++++--------
+ .../com/earth2me/essentials/IEssentials.java  | 10 ++++++
+ .../earth2me/essentials/RandomTeleport.java   |  2 +-
+ .../com/earth2me/essentials/Settings.java     |  4 +--
+ .../earth2me/essentials/TimedTeleport.java    | 12 +++----
+ .../java/com/earth2me/essentials/User.java    |  4 +--
+ .../commands/Commandbalancetop.java           | 16 ++++-----
+ .../essentials/commands/Commandbeezooka.java  |  4 +--
+ .../essentials/commands/Commandcreatekit.java |  2 +-
+ .../commands/Commandessentials.java           | 14 ++++----
+ .../commands/Commandkittycannon.java          |  4 +--
+ .../essentials/commands/Commandmail.java      | 22 ++++++++-----
+ .../essentials/commands/Commandnuke.java      | 20 ++++++-----
+ .../essentials/commands/Commandseen.java      |  6 ++--
+ .../essentials/commands/Commandskull.java     |  6 ++--
+ .../essentials/commands/Commandsudo.java      |  2 +-
+ .../essentials/economy/EconomyLayers.java     |  2 +-
+ .../essentials/updatecheck/UpdateChecker.java |  4 +--
+ .../src/main/resources/plugin.yml             |  1 +
+ EssentialsChat/src/main/resources/plugin.yml  |  1 +
+ .../discord/EssentialsDiscord.java            |  2 +-
+ .../discord/JDADiscordService.java            | 12 +++----
+ .../InteractionControllerImpl.java            |  2 +-
+ .../interactions/commands/ExecuteCommand.java |  2 +-
+ .../interactions/commands/MessageCommand.java |  2 +-
+ .../discord/listeners/BukkitChatListener.java |  4 +--
+ .../listeners/DiscordCommandDispatcher.java   |  2 +-
+ .../discord/util/ConsoleInjector.java         | 10 +++---
+ .../discord/util/DiscordCommandSender.java    | 10 +++---
+ .../essentialsx/discord/util/DiscordUtil.java | 10 +++---
+ .../src/main/resources/plugin.yml             |  1 +
+ .../discordlink/AccountLinkManager.java       |  8 ++---
+ .../listeners/LinkBukkitListener.java         | 12 +++----
+ .../discordlink/rolesync/RoleSyncManager.java |  6 ++--
+ .../src/main/resources/plugin.yml             |  1 +
+ EssentialsGeoIP/src/main/resources/plugin.yml |  1 +
+ .../src/main/resources/plugin.yml             |  1 +
+ .../spawn/EssentialsSpawnPlayerListener.java  | 12 +++----
+ EssentialsSpawn/src/main/resources/plugin.yml |  1 +
+ .../earth2me/essentials/xmpp/XMPPManager.java |  2 +-
+ EssentialsXMPP/src/main/resources/plugin.yml  |  1 +
+ 48 files changed, 198 insertions(+), 141 deletions(-)
+
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java b/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java
+index 906fb044c..0d8365bdd 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java
+@@ -171,7 +171,7 @@ public class AsyncTeleport implements IAsyncTeleport {
+             }
+ 
+             try {
+-                teleportee.getBase().getScheduler().run(ess, (scheduledTask) -> teleportee.getBase().eject(), null); //EntityDismountEvent requires a sync context. // Euphyllia
++                teleportee.getBase().getScheduler().run(ess, scheduledTask -> teleportee.getBase().eject(), null); //EntityDismountEvent requires a sync context. // Euphyllia
+             } catch (Exception e) { // Euphyllia
+                 future.completeExceptionally(e);
+                 return;
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/AsyncTimedTeleport.java b/Essentials/src/main/java/com/earth2me/essentials/AsyncTimedTeleport.java
+index 784b3eb89..dd5eeffcd 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/AsyncTimedTeleport.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/AsyncTimedTeleport.java
+@@ -28,7 +28,7 @@ public class AsyncTimedTeleport implements Runnable {
+     private final boolean timer_canMove;
+     private final Trade timer_chargeFor;
+     private final TeleportCause timer_cause;
+-    private int timer_task;
++    private io.papermc.paper.threadedregions.scheduler.ScheduledTask timer_task; // Euphyllia
+     private double timer_health;
+ 
+     AsyncTimedTeleport(final IUser user, final IEssentials ess, final AsyncTeleport teleport, final long delay, final IUser teleportUser, final ITarget target, final Trade chargeFor, final TeleportCause cause, final boolean respawn) {
+@@ -52,7 +52,7 @@ public class AsyncTimedTeleport implements Runnable {
+         this.timer_respawn = respawn;
+         this.timer_canMove = user.isAuthorized("essentials.teleport.timer.move");
+ 
+-        timer_task = ess.runTaskTimerAsynchronously(this, 20, 20).getTaskId();
++        timer_task = ess.getAsyncScheduler().runAtFixedRate(ess, scheduledTask -> this.run(), 20*50, 20*50, java.util.concurrent.TimeUnit.MILLISECONDS); // Euphyllia
+ 
+         if (future != null) {
+             this.parentFuture = future;
+@@ -139,16 +139,16 @@ public class AsyncTimedTeleport implements Runnable {
+             }
+         }
+ 
+-        ess.scheduleSyncDelayedTask(new DelayedTeleportTask());
++        ess.getEntityScheduler(teleportUser.getBase()).run(ess, scheduledTask -> new DelayedTeleportTask().run(), null); // Euphyllia
+     }
+ 
+     //If we need to cancelTimer a pending teleportPlayer call this method
+     void cancelTimer(final boolean notifyUser) {
+-        if (timer_task == -1) {
++        if (timer_task == null) { // Euphyllia
+             return;
+         }
+         try {
+-            ess.getServer().getScheduler().cancelTask(timer_task);
++            timer_task.cancel(); //ess.getServer().getScheduler().cancelTask(timer_task); // Euphyllia
+             if (notifyUser) {
+                 teleportOwner.sendTl("pendingTeleportCancelled");
+                 if (timer_teleportee != null && !timer_teleportee.equals(teleportOwner.getBase().getUniqueId())) {
+@@ -156,7 +156,7 @@ public class AsyncTimedTeleport implements Runnable {
+                 }
+             }
+         } finally {
+-            timer_task = -1;
++            timer_task = null; // Euphyllia
+         }
+     }
+ }
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/Backup.java b/Essentials/src/main/java/com/earth2me/essentials/Backup.java
+index 7ef4a5f10..ecda39ad9 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/Backup.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/Backup.java
+@@ -19,7 +19,7 @@ public class Backup implements Runnable {
+     private transient final IEssentials ess;
+     private final AtomicBoolean pendingShutdown = new AtomicBoolean(false);
+     private transient boolean running = false;
+-    private transient int taskId = -1;
++    private transient io.papermc.paper.threadedregions.scheduler.ScheduledTask taskId; // Euphyllia
+     private transient boolean active = false;
+     private transient CompletableFuture<Object> taskLock = null;
+ 
+@@ -27,7 +27,7 @@ public class Backup implements Runnable {
+         this.ess = ess;
+         server = ess.getServer();
+         if (!ess.getOnlinePlayers().isEmpty() || ess.getSettings().isAlwaysRunBackup()) {
+-            ess.runTaskAsynchronously(this::startTask);
++            ess.getAsyncScheduler().runNow(ess, scheduledTask -> startTask()); // Euphyllia
+         }
+     }
+ 
+@@ -37,10 +37,10 @@ public class Backup implements Runnable {
+ 
+     public synchronized void stopTask() {
+         running = false;
+-        if (taskId != -1) {
+-            server.getScheduler().cancelTask(taskId);
++        if (taskId != null) { // Euphyllia
++            taskId.cancel(); // Euphyllia
+         }
+-        taskId = -1;
++        taskId = null; // Euphyllia
+     }
+ 
+     private synchronized void startTask() {
+@@ -49,7 +49,7 @@ public class Backup implements Runnable {
+             if (interval < 1200) {
+                 return;
+             }
+-            taskId = ess.scheduleSyncRepeatingTask(this, interval, interval);
++            taskId = ess.getGlobalRegionScheduler().runAtFixedRate(ess, scheduledTask -> this.run(), interval, interval); // Euphyllia
+             running = true;
+         }
+     }
+@@ -85,13 +85,13 @@ public class Backup implements Runnable {
+         server.dispatchCommand(cs, "save-all");
+         server.dispatchCommand(cs, "save-off");
+ 
+-        ess.runTaskAsynchronously(() -> {
++        ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+             try {
+                 final ProcessBuilder childBuilder = new ProcessBuilder(command.split(" "));
+                 childBuilder.redirectErrorStream(true);
+                 childBuilder.directory(ess.getDataFolder().getParentFile().getParentFile());
+                 final Process child = childBuilder.start();
+-                ess.runTaskAsynchronously(() -> {
++                ess.getAsyncScheduler().runNow(ess, scheduledTask1 -> { // Euphyllia
+                     try {
+                         try (final BufferedReader reader = new BufferedReader(new InputStreamReader(child.getInputStream()))) {
+                             String line;
+@@ -124,7 +124,7 @@ public class Backup implements Runnable {
+                 }
+ 
+                 if (!pendingShutdown.get()) {
+-                    ess.scheduleSyncDelayedTask(new BackupEnableSaveTask());
++                    ess.getGlobalRegionScheduler().execute(ess, new BackupEnableSaveTask()); // Euphyllia
+                 }
+             }
+         });
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/BalanceTopImpl.java b/Essentials/src/main/java/com/earth2me/essentials/BalanceTopImpl.java
+index 4008b3fe5..aa265ef49 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/BalanceTopImpl.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/BalanceTopImpl.java
+@@ -69,7 +69,7 @@ public class BalanceTopImpl implements BalanceTop {
+             return cacheLock;
+         }
+         cacheLock = new CompletableFuture<>();
+-        ess.runTaskAsynchronously(this::calculateBalanceTopMap);
++        ess.getAsyncScheduler().runNow(ess, scheduledTask -> calculateBalanceTopMap()); // Euphyllia
+         return cacheLock;
+     }
+ 
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/Essentials.java b/Essentials/src/main/java/com/earth2me/essentials/Essentials.java
+index e2a2ff13e..d32c00769 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/Essentials.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/Essentials.java
+@@ -530,7 +530,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
+             alternativeCommandsHandler = new AlternativeCommandsHandler(this);
+ 
+             timer = new EssentialsTimer(this);
+-            scheduleSyncRepeatingTask(timer, 1000, 50);
++            getGlobalRegionScheduler().runAtFixedRate(this, scheduledTask -> timer.run(), 1000, 50); // Euphyllia
+ 
+             Economy.setEss(this);
+             execTimer.mark("RegHandler");
+@@ -540,7 +540,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
+             PermissionsDefaults.registerAllHatDefaults();
+ 
+             updateChecker = new UpdateChecker(this);
+-            runTaskAsynchronously(() -> {
++            getAsyncScheduler().runNow(this, scheduledTask -> {
+                 getLogger().log(Level.INFO, AdventureUtil.miniToLegacy(tlLiteral("versionFetching")));
+                 for (final Component component : updateChecker.getVersionMessages(false, true, new CommandSource(this, Bukkit.getConsoleSender()))) {
+                     getLogger().log(getSettings().isUpdateCheckEnabled() ? Level.WARNING : Level.INFO, AdventureUtil.adventureToLegacy(component));
+@@ -968,9 +968,32 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
+ 
+     @Override
+     public BukkitScheduler getScheduler() {
++        if (true) throw new UnsupportedOperationException();
+         return this.getServer().getScheduler();
+     }
+ 
++    // Euphyllia
++    @Override
++    public io.papermc.paper.threadedregions.scheduler.AsyncScheduler getAsyncScheduler() {
++        return this.getServer().getAsyncScheduler();
++    }
++
++    @Override
++    public io.papermc.paper.threadedregions.scheduler.RegionScheduler getRegionScheduler() {
++        return this.getServer().getRegionScheduler();
++    }
++
++    @Override
++    public io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler getGlobalRegionScheduler() {
++        return this.getServer().getGlobalRegionScheduler();
++    }
++
++    @Override
++    public io.papermc.paper.threadedregions.scheduler.EntityScheduler getEntityScheduler(final org.bukkit.entity.Entity entity) {
++        return entity.getScheduler();
++    }
++    // Euphyllia
++
+     @Override
+     public IJails getJails() {
+         return jails;
+@@ -1275,31 +1298,37 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
+ 
+     @Override
+     public BukkitTask runTaskAsynchronously(final Runnable run) {
++        if (true) throw new UnsupportedOperationException("Not supported yet"); // Euphyllia
+         return this.getScheduler().runTaskAsynchronously(this, run);
+     }
+ 
+     @Override
+     public BukkitTask runTaskLaterAsynchronously(final Runnable run, final long delay) {
++        if (true) throw new UnsupportedOperationException("Not supported yet"); // Euphyllia
+         return this.getScheduler().runTaskLaterAsynchronously(this, run, delay);
+     }
+ 
+     @Override
+     public BukkitTask runTaskTimerAsynchronously(final Runnable run, final long delay, final long period) {
++        if (true) throw new UnsupportedOperationException("Not supported yet"); // Euphyllia
+         return this.getScheduler().runTaskTimerAsynchronously(this, run, delay, period);
+     }
+ 
+     @Override
+     public int scheduleSyncDelayedTask(final Runnable run) {
++        if (true) throw new UnsupportedOperationException("Not supported yet"); // Euphyllia
+         return this.getScheduler().scheduleSyncDelayedTask(this, run);
+     }
+ 
+     @Override
+     public int scheduleSyncDelayedTask(final Runnable run, final long delay) {
++        if (true) throw new UnsupportedOperationException("Not supported yet"); // Euphyllia
+         return this.getScheduler().scheduleSyncDelayedTask(this, run, delay);
+     }
+ 
+     @Override
+     public int scheduleSyncRepeatingTask(final Runnable run, final long delay, final long period) {
++        if (true) throw new UnsupportedOperationException("Not supported yet"); // Euphyllia
+         return this.getScheduler().scheduleSyncRepeatingTask(this, run, delay, period);
+     }
+ 
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/EssentialsBlockListener.java b/Essentials/src/main/java/com/earth2me/essentials/EssentialsBlockListener.java
+index c0a861ce7..d15ca2904 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/EssentialsBlockListener.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/EssentialsBlockListener.java
+@@ -42,14 +42,14 @@ public class EssentialsBlockListener implements Listener {
+ 
+         final User user = ess.getUser(event.getPlayer());
+         if (user.hasUnlimited(is) && user.getBase().getGameMode() == GameMode.SURVIVAL) {
+-            ess.scheduleSyncDelayedTask(() -> {
++            ess.getEntityScheduler(user.getBase()).run(ess, scheduledTask -> { // Euphyllia
+                 if (is != null && is.getType() != null && !MaterialUtil.isAir(is.getType())) {
+                     final ItemStack cloneIs = is.clone();
+                     cloneIs.setAmount(1);
+                     Inventories.addItem(user.getBase(), cloneIs);
+                     user.getBase().updateInventory();
+                 }
+-            });
++            }, null); // Euphyllia
+         }
+     }
+ }
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/EssentialsEntityListener.java b/Essentials/src/main/java/com/earth2me/essentials/EssentialsEntityListener.java
+index 1305ba91c..cd4cd4438 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/EssentialsEntityListener.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/EssentialsEntityListener.java
+@@ -110,7 +110,7 @@ public class EssentialsEntityListener implements Listener {
+                         }
+                     }
+ 
+-                    ess.scheduleSyncDelayedTask(new PowerToolInteractTask());
++                    ess.getEntityScheduler(attacker.getBase()).run(ess, scheduledTask -> new PowerToolInteractTask().run(), null); // Euphyllia
+ 
+                     event.setCancelled(true);
+                     return;
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/EssentialsPlayerListener.java b/Essentials/src/main/java/com/earth2me/essentials/EssentialsPlayerListener.java
+index 0b3ad90b8..1918ec2c3 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/EssentialsPlayerListener.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/EssentialsPlayerListener.java
+@@ -82,7 +82,7 @@ import static com.earth2me.essentials.I18n.tlLiteral;
+ 
+ public class EssentialsPlayerListener implements Listener, FakeAccessor {
+     private final transient IEssentials ess;
+-    private final ConcurrentHashMap<UUID, Integer> pendingMotdTasks = new ConcurrentHashMap<>();
++    private final ConcurrentHashMap<UUID, io.papermc.paper.threadedregions.scheduler.ScheduledTask> pendingMotdTasks = new ConcurrentHashMap<>(); // Euphyllia
+ 
+     public EssentialsPlayerListener(final IEssentials parent) {
+         this.ess = parent;
+@@ -269,9 +269,9 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
+     public void onPlayerQuit(final PlayerQuitEvent event) {
+         final User user = ess.getUser(event.getPlayer());
+ 
+-        final Integer pendingId = pendingMotdTasks.remove(user.getUUID());
++        final io.papermc.paper.threadedregions.scheduler.ScheduledTask pendingId = pendingMotdTasks.remove(user.getUUID()); // Euphyllia
+         if (pendingId != null) {
+-            ess.getScheduler().cancelTask(pendingId);
++            pendingId.cancel(); // Euphyllia
+         }
+ 
+         if (hideJoinQuitMessages() || (ess.getSettings().allowSilentJoinQuit() && user.isAuthorized("essentials.silentquit"))) {
+@@ -324,7 +324,7 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
+     @EventHandler(priority = EventPriority.HIGHEST)
+     public void onPlayerJoin(final PlayerJoinEvent event) {
+         final String joinMessage = event.getJoinMessage();
+-        ess.runTaskAsynchronously(() -> delayedJoin(event.getPlayer(), joinMessage));
++        ess.getAsyncScheduler().runNow(ess, scheduledTask -> delayedJoin(event.getPlayer(), joinMessage)); // Euphyllia
+ 
+         if (hideJoinQuitMessages() || ess.getSettings().allowSilentJoinQuit() || ess.getSettings().isCustomJoinMessage()) {
+             event.setJoinMessage(null);
+@@ -419,13 +419,13 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
+                     effectiveMessage = message;
+                 }
+ 
+-                ess.runTaskAsynchronously(() -> ess.getServer().getPluginManager().callEvent(new AsyncUserDataLoadEvent(user, effectiveMessage)));
++                ess.getAsyncScheduler().runNow(ess, scheduledTask -> ess.getServer().getPluginManager().callEvent(new AsyncUserDataLoadEvent(user, effectiveMessage))); // Euphyllia
+ 
+                 if (ess.getSettings().getMotdDelay() >= 0) {
+                     final int motdDelay = ess.getSettings().getMotdDelay() / 50;
+                     final DelayMotdTask motdTask = new DelayMotdTask(user);
+                     if (motdDelay > 0) {
+-                        pendingMotdTasks.put(user.getUUID(), ess.scheduleSyncDelayedTask(motdTask, motdDelay));
++                        pendingMotdTasks.put(user.getUUID(), ess.getEntityScheduler(user.getBase()).runDelayed(ess, scheduledTask -> motdTask.run(), null, motdDelay)); // Euphyllia
+                     } else {
+                         motdTask.run();
+                     }
+@@ -442,7 +442,7 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
+                 }
+ 
+                 if (user.isAuthorized("essentials.updatecheck")) {
+-                    ess.runTaskAsynchronously(() -> {
++                    ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+                         for (final Component component : ess.getUpdateChecker().getVersionMessages(false, false, user.getSource())) {
+                             user.sendComponent(component);
+                         }
+@@ -517,7 +517,7 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
+             }
+         }
+ 
+-        ess.scheduleSyncDelayedTask(new DelayJoinTask());
++        ess.getEntityScheduler(player).run(ess, scheduledTask -> new DelayJoinTask().run(), null); // Euphyllia
+     }
+ 
+     // Makes the compass item ingame always point to the first essentials home.  #EasterEgg
+@@ -603,7 +603,7 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
+         final User user = ess.getUser(event.getPlayer());
+         if (user.hasUnlimited(new ItemStack(event.getBucket()))) {
+             event.getItemStack().setType(event.getBucket());
+-            ess.scheduleSyncDelayedTask(user.getBase()::updateInventory);
++            ess.getEntityScheduler(user.getBase()).run(ess, scheduledTask -> user.getBase().updateInventory(), null); // Euphyllia
+         }
+     }
+ 
+@@ -856,7 +856,7 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
+                 }
+             }
+ 
+-            ess.scheduleSyncDelayedTask(new DelayedClickJumpTask());
++            ess.getEntityScheduler(user.getBase()).run(ess, scheduledTask -> new DelayedClickJumpTask().run(), null); // Euphyllia
+         } catch (final Exception ex) {
+             if (ess.getSettings().isDebug()) {
+                 ess.getLogger().log(Level.WARNING, ex.getMessage(), ex);
+@@ -887,7 +887,7 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
+                     }
+                 }
+ 
+-                ess.scheduleSyncDelayedTask(new PowerToolUseTask());
++                ess.getEntityScheduler(user.getBase()).run(ess, scheduledTask -> new PowerToolUseTask().run(), null); // Euphyllia
+ 
+             }
+         }
+@@ -948,7 +948,8 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
+         }
+ 
+         if (refreshPlayer != null) {
+-            ess.scheduleSyncDelayedTask(refreshPlayer::updateInventory, 1);
++            final Player frp = refreshPlayer; // Euphyllia
++            ess.getEntityScheduler(refreshPlayer).runDelayed(ess, scheduledTask -> frp.updateInventory(), null, 1); // Euphyllia
+         }
+     }
+ 
+@@ -990,7 +991,8 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
+         }
+ 
+         if (refreshPlayer != null) {
+-            ess.scheduleSyncDelayedTask(refreshPlayer::updateInventory, 1);
++            final Player frp = refreshPlayer; // Euphyllia
++            ess.getEntityScheduler(refreshPlayer).runDelayed(ess, scheduledTask -> frp.updateInventory(), null, 1); // Euphyllia
+         }
+     }
+ 
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/IEssentials.java b/Essentials/src/main/java/com/earth2me/essentials/IEssentials.java
+index 598b1abe5..e7cc0168a 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/IEssentials.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/IEssentials.java
+@@ -99,6 +99,16 @@ public interface IEssentials extends Plugin {
+ 
+     BukkitScheduler getScheduler();
+ 
++    // Euphyllia
++    io.papermc.paper.threadedregions.scheduler.AsyncScheduler getAsyncScheduler();
++
++    io.papermc.paper.threadedregions.scheduler.RegionScheduler getRegionScheduler();
++
++    io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler getGlobalRegionScheduler();
++
++    io.papermc.paper.threadedregions.scheduler.EntityScheduler getEntityScheduler(final org.bukkit.entity.Entity entity);
++    // Euphyllia
++
+     IJails getJails();
+ 
+     IWarps getWarps();
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/RandomTeleport.java b/Essentials/src/main/java/com/earth2me/essentials/RandomTeleport.java
+index b1b683ab6..22b1bdd07 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/RandomTeleport.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/RandomTeleport.java
+@@ -119,7 +119,7 @@ public class RandomTeleport implements IConf {
+ 
+     // Prompts caching random valid locations, up to a maximum number of attempts
+     public void cacheRandomLocations(final Location center, final double minRange, final double maxRange) {
+-        ess.getServer().getScheduler().scheduleSyncDelayedTask(ess, () -> {
++        ess.getRegionScheduler().run(ess, center, scheduledTask -> { // Euphyllia
+             for (int i = 0; i < this.getFindAttempts(); ++i) {
+                 calculateRandomLocation(center, minRange, maxRange).thenAccept(location -> {
+                     if (isValidRandomLocation(location)) {
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/Settings.java b/Essentials/src/main/java/com/earth2me/essentials/Settings.java
+index bd8d64b4f..df89a26f9 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/Settings.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/Settings.java
+@@ -722,7 +722,7 @@ public class Settings implements net.ess3.api.ISettings {
+ 
+                     // This is 2 because Settings are reloaded twice in the startup lifecycle
+                     if (reloadCount.get() < 2) {
+-                        ess.scheduleSyncDelayedTask(() -> _addAlternativeCommand(effectiveAlias, toDisable));
++                        ess.getGlobalRegionScheduler().execute(ess, () -> _addAlternativeCommand(effectiveAlias, toDisable)); // Euphyllia
+                     } else {
+                         _addAlternativeCommand(effectiveAlias, toDisable);
+                     }
+@@ -735,7 +735,7 @@ public class Settings implements net.ess3.api.ISettings {
+                     ess.getLogger().log(Level.INFO, "Syncing commands");
+                 }
+                 if (reloadCount.get() < 2) {
+-                    ess.scheduleSyncDelayedTask(() -> ess.getSyncCommandsProvider().syncCommands());
++                    ess.getGlobalRegionScheduler().execute(ess, () -> ess.getSyncCommandsProvider().syncCommands()); // Euphyllia
+                 } else {
+                     ess.getSyncCommandsProvider().syncCommands();
+                 }
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/TimedTeleport.java b/Essentials/src/main/java/com/earth2me/essentials/TimedTeleport.java
+index cfca5f607..cb384213a 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/TimedTeleport.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/TimedTeleport.java
+@@ -27,7 +27,7 @@ public class TimedTeleport implements Runnable {
+     private final boolean timer_canMove;
+     private final Trade timer_chargeFor;
+     private final TeleportCause timer_cause;
+-    private int timer_task;
++    private io.papermc.paper.threadedregions.scheduler.ScheduledTask timer_task; // Euphyllia
+     private double timer_health;
+ 
+     TimedTeleport(final IUser user, final IEssentials ess, final Teleport teleport, final long delay, final IUser teleportUser, final ITarget target, final Trade chargeFor, final TeleportCause cause, final boolean respawn) {
+@@ -47,7 +47,7 @@ public class TimedTeleport implements Runnable {
+         this.timer_respawn = respawn;
+         this.timer_canMove = user.isAuthorized("essentials.teleport.timer.move");
+ 
+-        timer_task = ess.runTaskTimerAsynchronously(this, 20, 20).getTaskId();
++        timer_task = ess.getAsyncScheduler().runAtFixedRate(ess, scheduledTask -> this.run(), 20*50, 20*50, java.util.concurrent.TimeUnit.MILLISECONDS); // Euphyllia
+     }
+ 
+     @Override
+@@ -115,16 +115,16 @@ public class TimedTeleport implements Runnable {
+             }
+         }
+ 
+-        ess.scheduleSyncDelayedTask(new DelayedTeleportTask());
++        ess.getEntityScheduler(teleportUser.getBase()).run(ess, scheduledTask -> new DelayedTeleportTask().run(), null); // Euphyllia
+     }
+ 
+     //If we need to cancelTimer a pending teleportPlayer call this method
+     void cancelTimer(final boolean notifyUser) {
+-        if (timer_task == -1) {
++        if (timer_task == null) { // Euphyllia
+             return;
+         }
+         try {
+-            ess.getServer().getScheduler().cancelTask(timer_task);
++            timer_task.cancel(); // Euphyllia
+             if (notifyUser) {
+                 teleportOwner.sendTl("pendingTeleportCancelled");
+                 if (timer_teleportee != null && !timer_teleportee.equals(teleportOwner.getBase().getUniqueId())) {
+@@ -132,7 +132,7 @@ public class TimedTeleport implements Runnable {
+                 }
+             }
+         } finally {
+-            timer_task = -1;
++            timer_task = null; // Euphyllia
+         }
+     }
+ }
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/User.java b/Essentials/src/main/java/com/earth2me/essentials/User.java
+index c928cba85..f638795be 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/User.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/User.java
+@@ -317,7 +317,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
+     }
+ 
+     public void dispose() {
+-        ess.runTaskAsynchronously(this::_dispose);
++        ess.getAsyncScheduler().runNow(ess, scheduledTask -> _dispose()); // Euphyllia
+     }
+ 
+     private void _dispose() {
+@@ -828,7 +828,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
+     public void updateActivityOnChat(final boolean broadcast) {
+         if (ess.getSettings().cancelAfkOnChat()) {
+             //Chat happens async, make sure we have a sync context
+-            ess.scheduleSyncDelayedTask(() -> updateActivity(broadcast, AfkStatusChangeEvent.Cause.CHAT));
++            ess.getEntityScheduler(base).run(ess, scheduledTask -> updateActivity(broadcast, AfkStatusChangeEvent.Cause.CHAT), null); // Euphyllia
+         }
+     }
+ 
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandbalancetop.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandbalancetop.java
+index 79599a98f..7a2468a9e 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandbalancetop.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandbalancetop.java
+@@ -39,7 +39,7 @@ public class Commandbalancetop extends EssentialsCommand {
+             new TextPager(cache).showPage(Integer.toString(page), null, "balancetop", sender);
+         };
+         if (sender.getSender() instanceof BlockCommandSender) {
+-            ess.scheduleSyncDelayedTask(runnable);
++            ess.getGlobalRegionScheduler().execute(ess, runnable); // Euphyllia
+         } else {
+             runnable.run();
+         }
+@@ -47,20 +47,20 @@ public class Commandbalancetop extends EssentialsCommand {
+ 
+     @Override
+     protected void run(final Server server, final CommandSource sender, final String commandLabel, final String[] args) throws Exception {
+-        int page = 0;
+-        boolean force = false;
++        final java.util.concurrent.atomic.AtomicInteger page = new java.util.concurrent.atomic.AtomicInteger(0); // Euphyllia
++        final java.util.concurrent.atomic.AtomicBoolean force = new java.util.concurrent.atomic.AtomicBoolean(false); // Euphyllia
+         if (args.length > 0) {
+             try {
+-                page = Integer.parseInt(args[0]);
++                page.set(Integer.parseInt(args[0])); // Euphyllia
+             } catch (final NumberFormatException ex) {
+                 if (args[0].equalsIgnoreCase("force") && (!sender.isPlayer() || ess.getUser(sender.getPlayer()).isAuthorized("essentials.balancetop.force"))) {
+-                    force = true;
++                    force.set(true);// Euphyllia
+                 }
+             }
+         }
+ 
+-        if (!force && ess.getBalanceTop().getCacheAge() > System.currentTimeMillis() - CACHETIME) {
+-            outputCache(sender, page);
++        if (!force.get() && ess.getBalanceTop().getCacheAge() > System.currentTimeMillis() - CACHETIME) { // Euphyllia
++            outputCache(sender, page.get()); // Euphyllia
+             return;
+         }
+ 
+@@ -69,7 +69,7 @@ public class Commandbalancetop extends EssentialsCommand {
+             sender.sendTl("orderBalances", ess.getUsers().getUserCount());
+         }
+ 
+-        ess.runTaskAsynchronously(new Viewer(sender, page, force));
++        ess.getAsyncScheduler().runNow(ess, scheduledTask -> new Viewer(sender, page.get(), force.get())); // Euphyllia
+     }
+ 
+     @Override
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandbeezooka.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandbeezooka.java
+index 19e156f66..0f37ebfbe 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandbeezooka.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandbeezooka.java
+@@ -23,11 +23,11 @@ public class Commandbeezooka extends EssentialsCommand {
+         final Entity bee = Mob.BEE.spawn(user.getWorld(), server, user.getBase().getEyeLocation());
+         bee.setVelocity(user.getBase().getEyeLocation().getDirection().multiply(2));
+ 
+-        ess.scheduleSyncDelayedTask(() -> {
++        ess.getEntityScheduler(bee).runDelayed(ess, scheduledTask -> { // Euphyllia
+             final Location loc = bee.getLocation();
+             bee.remove();
+             loc.getWorld().createExplosion(loc, 0F);
+-        }, 20);
++        }, null, 20); // Euphyllia
+     }
+ 
+ }
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandcreatekit.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandcreatekit.java
+index eda36424c..8630fbd13 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandcreatekit.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandcreatekit.java
+@@ -70,7 +70,7 @@ public class Commandcreatekit extends EssentialsCommand {
+     }
+ 
+     private void uploadPaste(final CommandSource sender, final String kitName, final long delay, final List<String> list) {
+-        ess.runTaskAsynchronously(() -> {
++        ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+             try {
+                 final StringWriter sw = new StringWriter();
+                 final YamlConfigurationLoader loader = YamlConfigurationLoader.builder().sink(() -> new BufferedWriter(sw)).indent(2).nodeStyle(NodeStyle.BLOCK).build();
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandessentials.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandessentials.java
+index 24a54e272..3129c344f 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandessentials.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandessentials.java
+@@ -36,7 +36,7 @@ import org.bukkit.inventory.ItemStack;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.PluginDescriptionFile;
+ import org.bukkit.plugin.PluginManager;
+-import org.bukkit.scheduler.BukkitRunnable;
++//import org.bukkit.scheduler.BukkitRunnable;
+ 
+ import java.io.File;
+ import java.io.IOException;
+@@ -338,7 +338,7 @@ public class Commandessentials extends EssentialsCommand {
+         final Map<String, String> disabledCommandsCopy = new HashMap<>(ess.getAlternativeCommandsHandler().disabledCommands());
+ 
+         // Further operations will be heavy IO
+-        ess.runTaskAsynchronously(() -> {
++        ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+             boolean config = false;
+             boolean discord = false;
+             boolean kits = false;
+@@ -545,7 +545,7 @@ public class Commandessentials extends EssentialsCommand {
+         final double moneyArg = args.length >= 3 ? FloatUtil.parseDouble(args[2].replaceAll("[^0-9.]", "")) : 0;
+         final int homesArg = args.length >= 4 && NumberUtil.isInt(args[3]) ? Integer.parseInt(args[3]) : 0;
+ 
+-        ess.runTaskAsynchronously(() -> {
++        ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+             final long currTime = System.currentTimeMillis();
+             for (final UUID u : ess.getUsers().getAllUserUUIDs()) {
+                 final User user = ess.getUsers().loadUncachedUser(u);
+@@ -596,7 +596,7 @@ public class Commandessentials extends EssentialsCommand {
+         switch (args[1]) {
+             case "fix":
+                 sender.sendTl("fixingHomes");
+-                ess.runTaskAsynchronously(() -> {
++                ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+                     for (final UUID u : ess.getUsers().getAllUserUUIDs()) {
+                         final User user = ess.getUsers().loadUncachedUser(u);
+                         if (user == null) {
+@@ -625,7 +625,7 @@ public class Commandessentials extends EssentialsCommand {
+                 } else {
+                     sender.sendTl("deletingHomes");
+                 }
+-                ess.runTaskAsynchronously(() -> {
++                ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+                     for (final UUID u : ess.getUsers().getAllUserUUIDs()) {
+                         final User user = ess.getUsers().loadUncachedUser(u);
+                         if (user == null) {
+@@ -674,7 +674,7 @@ public class Commandessentials extends EssentialsCommand {
+                 sender.sendTl("usermapPurge", String.valueOf(seppuku));
+ 
+                 final Set<UUID> uuids = new HashSet<>(ess.getUsers().getAllUserUUIDs());
+-                ess.runTaskAsynchronously(() -> {
++                ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+                     final File userdataFolder = new File(ess.getDataFolder(), "userdata");
+                     final File backupFolder = new File(ess.getDataFolder(), "userdata-npc-backup-boogaloo-" + System.currentTimeMillis());
+ 
+@@ -835,7 +835,7 @@ public class Commandessentials extends EssentialsCommand {
+         }
+ 
+         sender.sendTl("versionFetching");
+-        ess.runTaskAsynchronously(() -> {
++        ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+             for (final Component component : ess.getUpdateChecker().getVersionMessages(true, true, sender)) {
+                 sender.sendComponent(component);
+             }
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandkittycannon.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandkittycannon.java
+index e40234f52..094f6a3f3 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandkittycannon.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandkittycannon.java
+@@ -42,11 +42,11 @@ public class Commandkittycannon extends EssentialsCommand {
+     @Override
+     protected void run(final Server server, final User user, final String commandLabel, final String[] args) throws Exception {
+         final Entity ocelot = Mob.CAT.getType() == null ? spawnOcelot(server, user) : spawnCat(server, user);
+-        ess.scheduleSyncDelayedTask(() -> {
++        ess.getEntityScheduler(ocelot).runDelayed(ess, scheduledTask -> { // Euphyllia
+             final Location loc = ocelot.getLocation();
+             ocelot.remove();
+             loc.getWorld().createExplosion(loc, 0F);
+-        }, 20);
++        }, null, 20); // Euphyllia
+ 
+     }
+ }
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandmail.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandmail.java
+index 7dad73063..27b153ee6 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandmail.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandmail.java
+@@ -151,7 +151,7 @@ public class Commandmail extends EssentialsCommand {
+             if (!user.isAuthorized("essentials.mail.sendall")) {
+                 throw new TranslatableException("noPerm", "essentials.mail.sendall");
+             }
+-            ess.runTaskAsynchronously(new SendAll(user,
++            ess.getAsyncScheduler().runNow(ess, scheduledTask -> new SendAll(user, // Euphyllia
+                     FormatUtil.formatMessage(user, "essentials.mail",
+                             StringUtil.sanitizeString(FormatUtil.stripFormat(getFinalArg(args, 1)))), 0));
+             user.sendTl("mailSent");
+@@ -161,9 +161,15 @@ public class Commandmail extends EssentialsCommand {
+             if (!user.isAuthorized("essentials.mail.sendtempall")) {
+                 throw new TranslatableException("noPerm", "essentials.mail.sendtempall");
+             }
+-            ess.runTaskAsynchronously(new SendAll(user,
+-                    FormatUtil.formatMessage(user, "essentials.mail",
+-                            StringUtil.sanitizeString(FormatUtil.stripFormat(getFinalArg(args, 2)))), DateUtil.parseDateDiff(args[1], true)));
++            ess.getAsyncScheduler().runNow(ess, scheduledTask -> {
++                try {
++                    new SendAll(user, // Euphyllia
++                            FormatUtil.formatMessage(user, "essentials.mail",
++                                    StringUtil.sanitizeString(FormatUtil.stripFormat(getFinalArg(args, 2)))), DateUtil.parseDateDiff(args[1], true));
++                } catch (Exception e) {
++                    throw new RuntimeException(e);
++                }
++            });
+             user.sendTl("mailSent");
+             return;
+         }
+@@ -207,7 +213,7 @@ public class Commandmail extends EssentialsCommand {
+                 throw new TranslatableException("noPerm", "essentials.mail.clearall");
+             }
+ 
+-            ess.runTaskAsynchronously(new ClearAll());
++            ess.getAsyncScheduler().runNow(ess, scheduledTask -> new ClearAll()); // Euphyllia
+             user.sendTl("mailClearedAll");
+             return;
+ 
+@@ -242,7 +248,7 @@ public class Commandmail extends EssentialsCommand {
+             sender.sendTl("mailCleared");
+             return;
+         } else if (args.length >= 1 && "clearall".equalsIgnoreCase(args[0])){
+-            ess.runTaskAsynchronously(new ClearAll());
++            ess.getAsyncScheduler().runNow(ess, scheduledTask -> new ClearAll()); // Euphyllia
+             sender.sendTl("mailClearedAll");
+             return;
+         } else if (args.length >= 3 && "send".equalsIgnoreCase(args[0])) {
+@@ -267,12 +273,12 @@ public class Commandmail extends EssentialsCommand {
+             sender.sendTl("mailSent");
+             return;
+         } else if (args.length >= 2 && "sendall".equalsIgnoreCase(args[0])) {
+-            ess.runTaskAsynchronously(new SendAll(Console.getInstance(), FormatUtil.replaceFormat(getFinalArg(args, 1)), 0));
++            ess.getAsyncScheduler().runNow(ess, scheduledTask -> new SendAll(Console.getInstance(), FormatUtil.replaceFormat(getFinalArg(args, 1)), 0)); // Euphyllia
+             sender.sendTl("mailSent");
+             return;
+         } else if (args.length >= 3 && "sendtempall".equalsIgnoreCase(args[0])) {
+             final long dateDiff = DateUtil.parseDateDiff(args[1], true);
+-            ess.runTaskAsynchronously(new SendAll(Console.getInstance(), FormatUtil.replaceFormat(getFinalArg(args, 2)), dateDiff));
++            ess.getAsyncScheduler().runNow(ess, scheduledTask -> new SendAll(Console.getInstance(), FormatUtil.replaceFormat(getFinalArg(args, 2)), dateDiff)); // Euphyllia
+             sender.sendTl("mailSent");
+             return;
+         } else if (args.length >= 2) {
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandnuke.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandnuke.java
+index c06d2f16e..53fbb8c07 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandnuke.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandnuke.java
+@@ -35,17 +35,19 @@ public class Commandnuke extends EssentialsCommand {
+             if (user == null) {
+                 continue;
+             }
+-            user.sendTl("nuke");
+-            final Location loc = user.getLocation();
+-            final World world = loc.getWorld();
+-            if (world != null) {
+-                for (int x = -10; x <= 10; x += 5) {
+-                    for (int z = -10; z <= 10; z += 5) {
+-                        final TNTPrimed entity = world.spawn(new Location(world, loc.getBlockX() + x, world.getHighestBlockYAt(loc) + 64, loc.getBlockZ() + z), TNTPrimed.class);
+-                        entity.setMetadata(NUKE_META_KEY, new FixedMetadataValue(ess, true));
++            ess.getEntityScheduler(user.getBase()).run(ess, scheduledTask -> { // Euphyllia
++                user.sendTl("nuke");
++                final Location loc = user.getLocation();
++                final World world = loc.getWorld();
++                if (world != null) {
++                    for (int x = -10; x <= 10; x += 5) {
++                        for (int z = -10; z <= 10; z += 5) {
++                            final TNTPrimed entity = world.spawn(new Location(world, loc.getBlockX() + x, world.getHighestBlockYAt(loc) + 64, loc.getBlockZ() + z), TNTPrimed.class);
++                            entity.setMetadata(NUKE_META_KEY, new FixedMetadataValue(ess, true));
++                        }
+                     }
+                 }
+-            }
++            }, null);// Euphyllia
+         }
+     }
+ 
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandseen.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandseen.java
+index 6acfc2c45..a3c1c017b 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandseen.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandseen.java
+@@ -61,7 +61,7 @@ public class Commandseen extends EssentialsCommand {
+                     return;
+                 }
+             }
+-            ess.getScheduler().runTaskAsynchronously(ess, new Runnable() {
++            ess.getAsyncScheduler().runNow(ess, scheduledTask -> new Runnable() { // Euphyllia
+                 @Override
+                 public void run() {
+                     final User userFromBukkit = ess.getUsers().getUser(args[0]);
+@@ -83,7 +83,7 @@ public class Commandseen extends EssentialsCommand {
+                 private void showUserSeen(final User user) {
+                     showSeenMessage(sender, user, searchAccounts, showBan, showIp, showLocation, showWhitelist);
+                 }
+-            });
++            }.run()); // Euphyllia
+         } else {
+             showSeenMessage(sender, player, searchAccounts, showBan, showIp, showLocation, showWhitelist);
+         }
+@@ -199,7 +199,7 @@ public class Commandseen extends EssentialsCommand {
+     private void seenIP(final CommandSource sender, final String ipAddress, final String display) {
+         sender.sendTl("runningPlayerMatch", AdventureUtil.parsed(AdventureUtil.legacyToMini(display)));
+ 
+-        ess.runTaskAsynchronously(() -> {
++        ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+             final List<String> matches = new ArrayList<>();
+             for (final UUID u : ess.getUsers().getAllUserUUIDs()) {
+                 final User user = ess.getUsers().loadUncachedUser(u);
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandskull.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandskull.java
+index d914cdfb9..8f7b60a74 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandskull.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandskull.java
+@@ -98,7 +98,7 @@ public class Commandskull extends EssentialsCommand {
+     }
+ 
+     private void editSkull(final User user, final ItemStack stack, final SkullMeta skullMeta, final String owner, final boolean spawn) {
+-        ess.runTaskAsynchronously(() -> {
++        ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+             // Run this stuff async because it causes an HTTP request
+ 
+             final String shortOwnerName;
+@@ -128,7 +128,7 @@ public class Commandskull extends EssentialsCommand {
+             }
+             skullMeta.setDisplayName("§fSkull of " + shortOwnerName);
+ 
+-            ess.scheduleSyncDelayedTask(() -> {
++            ess.getEntityScheduler(user.getBase()).run(ess, scheduledTask1 -> { // Euphyllia
+                 stack.setItemMeta(skullMeta);
+                 if (spawn) {
+                     Inventories.addItem(user.getBase(), stack);
+@@ -136,7 +136,7 @@ public class Commandskull extends EssentialsCommand {
+                     return;
+                 }
+                 user.sendTl("skullChanged", shortOwnerName);
+-            });
++            }, null); // Euphyllia
+         });
+     }
+ 
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandsudo.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandsudo.java
+index 861cf6b30..27189f0dc 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandsudo.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandsudo.java
+@@ -53,7 +53,7 @@ public class Commandsudo extends EssentialsLoopCommand {
+                 }
+             }
+ 
+-            ess.scheduleSyncDelayedTask(new SudoCommandTask());
++            ess.getEntityScheduler(user.getBase()).run(ess, scheduledTask -> new SudoCommandTask().run(), null); // Euphyllia
+         }
+     }
+ }
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/economy/EconomyLayers.java b/Essentials/src/main/java/com/earth2me/essentials/economy/EconomyLayers.java
+index a4184e558..28afe648b 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/economy/EconomyLayers.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/economy/EconomyLayers.java
+@@ -32,7 +32,7 @@ public final class EconomyLayers {
+     }
+ 
+     public static void onEnable(final Essentials ess) {
+-        ess.scheduleSyncDelayedTask(() -> {
++        ess.getGlobalRegionScheduler().execute(ess, () -> { // Euphyllia
+             serverStarted = true;
+             for (final Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
+                 if (!plugin.isEnabled()) {
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/updatecheck/UpdateChecker.java b/Essentials/src/main/java/com/earth2me/essentials/updatecheck/UpdateChecker.java
+index 7476356bb..91b62f959 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/updatecheck/UpdateChecker.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/updatecheck/UpdateChecker.java
+@@ -76,7 +76,7 @@ public final class UpdateChecker {
+                 return pendingDevFuture;
+             }
+             pendingDevFuture = new CompletableFuture<>();
+-            ess.runTaskAsynchronously(() -> {
++            ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+                 pendingDevFuture.complete(cachedDev = fetchDistance(BRANCH, getVersionIdentifier()));
+                 pendingDevFuture = null;
+                 lastFetchTime = System.currentTimeMillis();
+@@ -92,7 +92,7 @@ public final class UpdateChecker {
+                 return pendingReleaseFuture;
+             }
+             pendingReleaseFuture = new CompletableFuture<>();
+-            ess.runTaskAsynchronously(() -> {
++            ess.getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+                 catchBlock:
+                 try {
+                     final HttpURLConnection connection = tryRequestWithFallback(LATEST_RELEASE_URL, LATEST_RELEASE_PROXY_URL);
+diff --git a/EssentialsAntiBuild/src/main/resources/plugin.yml b/EssentialsAntiBuild/src/main/resources/plugin.yml
+index f7dac0e89..02776cecc 100644
+--- a/EssentialsAntiBuild/src/main/resources/plugin.yml
++++ b/EssentialsAntiBuild/src/main/resources/plugin.yml
+@@ -8,6 +8,7 @@ description: Provides build protection.
+ authors: [Zenexer, ementalo, Aelux, Brettflan, KimKandor, snowleo, ceulemans, Xeology, KHobbits, Iaccidentally, drtshock, mdcfe]
+ depend: [Essentials]
+ api-version: "1.13"
++folia-supported: true # Euphyllia
+ 
+ permissions:
+   essentials.exempt.protect:
+diff --git a/EssentialsChat/src/main/resources/plugin.yml b/EssentialsChat/src/main/resources/plugin.yml
+index ab1d85c5a..b02902fe1 100644
+--- a/EssentialsChat/src/main/resources/plugin.yml
++++ b/EssentialsChat/src/main/resources/plugin.yml
+@@ -8,6 +8,7 @@ description: Provides chat control features for Essentials.  Requires Permission
+ authors: [Zenexer, ementalo, Aelux, Brettflan, KimKandor, snowleo, ceulemans, Xeology, KHobbits, md_5, Okamosy, Iaccidentally, mdcfe, JRoy, triagonal]
+ depend: [Essentials]
+ api-version: 1.13
++folia-supported: true # Euphyllia
+ commands:
+   toggleshout:
+     description: Toggles whether you are talking in shout mode
+diff --git a/EssentialsDiscord/src/main/java/net/essentialsx/discord/EssentialsDiscord.java b/EssentialsDiscord/src/main/java/net/essentialsx/discord/EssentialsDiscord.java
+index e47e25cda..aedec1bdb 100644
+--- a/EssentialsDiscord/src/main/java/net/essentialsx/discord/EssentialsDiscord.java
++++ b/EssentialsDiscord/src/main/java/net/essentialsx/discord/EssentialsDiscord.java
+@@ -61,7 +61,7 @@ public class EssentialsDiscord extends JavaPlugin implements IEssentialsModule {
+             jda = new JDADiscordService(this);
+             try {
+                 jda.startup();
+-                ess.scheduleSyncDelayedTask(() -> ((InteractionControllerImpl) jda.getInteractionController()).processBatchRegistration());
++                ess.getGlobalRegionScheduler().execute(ess, () -> ((InteractionControllerImpl) jda.getInteractionController()).processBatchRegistration()); // Euphyllia
+             } catch (Exception e) {
+                 getLogger().log(Level.SEVERE, AdventureUtil.miniToLegacy(tlLiteral("discordErrorLogin", e.getMessage())));
+                 if (ess.getSettings().isDebug()) {
+diff --git a/EssentialsDiscord/src/main/java/net/essentialsx/discord/JDADiscordService.java b/EssentialsDiscord/src/main/java/net/essentialsx/discord/JDADiscordService.java
+index 2843e55af..318614ce0 100644
+--- a/EssentialsDiscord/src/main/java/net/essentialsx/discord/JDADiscordService.java
++++ b/EssentialsDiscord/src/main/java/net/essentialsx/discord/JDADiscordService.java
+@@ -237,7 +237,7 @@ public class JDADiscordService implements DiscordService, IEssentialsModule {
+             logger.log(Level.WARNING, "Error while loading the achievement/advancement listener. You will not receive achievement/advancement notifications on Discord.", e);
+         }
+ 
+-        getPlugin().getEss().scheduleSyncDelayedTask(() -> DiscordUtil.dispatchDiscordMessage(JDADiscordService.this, MessageType.DefaultTypes.SERVER_START, getSettings().getStartMessage(), true, null, null, null));
++        getPlugin().getEss().getGlobalRegionScheduler().execute(getPlugin(), () -> DiscordUtil.dispatchDiscordMessage(JDADiscordService.this, MessageType.DefaultTypes.SERVER_START, getSettings().getStartMessage(), true, null, null, null)); // Euphyllia
+ 
+         Bukkit.getServicesManager().register(DiscordService.class, this, plugin, ServicePriority.Normal);
+     }
+@@ -266,11 +266,11 @@ public class JDADiscordService implements DiscordService, IEssentialsModule {
+             logger.warning("Sending message to channel \"" + type.getKey() + "\" which is an unregistered type! If you are a plugin author, you should be registering your MessageType before using them.");
+         }
+         final DiscordMessageEvent event = new DiscordMessageEvent(type, FormatUtil.stripFormat(message), allowGroupMentions);
+-        if (Bukkit.getServer().isPrimaryThread()) {
+-            Bukkit.getPluginManager().callEvent(event);
+-        } else {
+-            Bukkit.getScheduler().runTask(plugin, () -> Bukkit.getPluginManager().callEvent(event));
+-        }
++        //if (Bukkit.getServer().isPrimaryThread()) { // Euphyllia
++        Bukkit.getPluginManager().callEvent(event);
++        /*} else {
++        Bukkit.getScheduler().runTask(plugin, () -> Bukkit.getPluginManager().callEvent(event));
++        }*/ // Euphyllia
+     }
+ 
+     @Override
+diff --git a/EssentialsDiscord/src/main/java/net/essentialsx/discord/interactions/InteractionControllerImpl.java b/EssentialsDiscord/src/main/java/net/essentialsx/discord/interactions/InteractionControllerImpl.java
+index 265815972..499c625a6 100644
+--- a/EssentialsDiscord/src/main/java/net/essentialsx/discord/interactions/InteractionControllerImpl.java
++++ b/EssentialsDiscord/src/main/java/net/essentialsx/discord/interactions/InteractionControllerImpl.java
+@@ -64,7 +64,7 @@ public class InteractionControllerImpl extends ListenerAdapter implements Intera
+             interactionEvent.replyTl("noAccessCommand");
+             return;
+         }
+-        jda.getPlugin().getEss().scheduleSyncDelayedTask(() -> command.onCommand(interactionEvent));
++        jda.getPlugin().getEss().getGlobalRegionScheduler().execute(jda.getPlugin(), () -> command.onCommand(interactionEvent)); // Euphyllia
+     }
+ 
+     @Override
+diff --git a/EssentialsDiscord/src/main/java/net/essentialsx/discord/interactions/commands/ExecuteCommand.java b/EssentialsDiscord/src/main/java/net/essentialsx/discord/interactions/commands/ExecuteCommand.java
+index 09e1a9fad..b30a36eec 100644
+--- a/EssentialsDiscord/src/main/java/net/essentialsx/discord/interactions/commands/ExecuteCommand.java
++++ b/EssentialsDiscord/src/main/java/net/essentialsx/discord/interactions/commands/ExecuteCommand.java
+@@ -22,7 +22,7 @@ public class ExecuteCommand extends InteractionCommandImpl {
+     public void onCommand(final InteractionEvent event) {
+         final String command = event.getStringArgument("command");
+         event.replyTl("discordCommandExecuteReply", command);
+-        Bukkit.getScheduler().runTask(jda.getPlugin(), () -> {
++        jda.getPlugin().getEss().getGlobalRegionScheduler().execute(jda.getPlugin(), () -> { // Euphyllia
+             try {
+                 Bukkit.dispatchCommand(new DiscordCommandSender(jda, Bukkit.getConsoleSender(), message -> event.reply(MessageUtil.sanitizeDiscordMarkdown(message))).getSender(), command);
+             } catch (CommandException e) {
+diff --git a/EssentialsDiscord/src/main/java/net/essentialsx/discord/interactions/commands/MessageCommand.java b/EssentialsDiscord/src/main/java/net/essentialsx/discord/interactions/commands/MessageCommand.java
+index 94f00faf6..d9ec76894 100644
+--- a/EssentialsDiscord/src/main/java/net/essentialsx/discord/interactions/commands/MessageCommand.java
++++ b/EssentialsDiscord/src/main/java/net/essentialsx/discord/interactions/commands/MessageCommand.java
+@@ -55,7 +55,7 @@ public class MessageCommand extends InteractionCommandImpl {
+         user.sendTl("msgFormat", event.getMember().getTag(), AdventureUtil.parsed(user.playerTl("meRecipient")), message);
+         // We use an atomic reference here so that java will garbage collect the recipient
+         final AtomicReference<DiscordMessageRecipient> ref = new AtomicReference<>(new DiscordMessageRecipient(event.getMember()));
+-        jda.getPlugin().getEss().runTaskLaterAsynchronously(() -> ref.set(null), 6000); // Expires after 5 minutes
++        jda.getPlugin().getEss().getAsyncScheduler().runDelayed(jda.getPlugin(), scheduledTask -> ref.set(null), 6000*50, java.util.concurrent.TimeUnit.MILLISECONDS); // Expires after 5 minutes // Euphyllia
+         user.setReplyRecipient(ref.get());
+     }
+ }
+diff --git a/EssentialsDiscord/src/main/java/net/essentialsx/discord/listeners/BukkitChatListener.java b/EssentialsDiscord/src/main/java/net/essentialsx/discord/listeners/BukkitChatListener.java
+index 2ae1c91e0..7882478bf 100644
+--- a/EssentialsDiscord/src/main/java/net/essentialsx/discord/listeners/BukkitChatListener.java
++++ b/EssentialsDiscord/src/main/java/net/essentialsx/discord/listeners/BukkitChatListener.java
+@@ -20,7 +20,7 @@ public class BukkitChatListener implements Listener {
+     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+     public void onChat(AsyncPlayerChatEvent event) {
+         final Player player = event.getPlayer();
+-        Bukkit.getScheduler().runTask(jda.getPlugin(), () -> {
++        player.getScheduler().run(jda.getPlugin(), scheduledTask -> { // Euphyllia
+             final DiscordChatMessageEvent chatEvent = new DiscordChatMessageEvent(event.getPlayer(), event.getMessage(), ChatType.UNKNOWN);
+             chatEvent.setCancelled(!jda.getSettings().isShowAllChat() && !event.getRecipients().containsAll(Bukkit.getOnlinePlayers()));
+             Bukkit.getPluginManager().callEvent(chatEvent);
+@@ -29,6 +29,6 @@ public class BukkitChatListener implements Listener {
+             }
+ 
+             jda.sendChatMessage(player, chatEvent.getMessage());
+-        });
++        }, null); // Euphyllia
+     }
+ }
+diff --git a/EssentialsDiscord/src/main/java/net/essentialsx/discord/listeners/DiscordCommandDispatcher.java b/EssentialsDiscord/src/main/java/net/essentialsx/discord/listeners/DiscordCommandDispatcher.java
+index c735aa7bd..0deef2354 100644
+--- a/EssentialsDiscord/src/main/java/net/essentialsx/discord/listeners/DiscordCommandDispatcher.java
++++ b/EssentialsDiscord/src/main/java/net/essentialsx/discord/listeners/DiscordCommandDispatcher.java
+@@ -30,7 +30,7 @@ public class DiscordCommandDispatcher extends ListenerAdapter {
+             }
+ 
+             final String command = event.getMessage().getContentRaw();
+-            Bukkit.getScheduler().runTask(jda.getPlugin(), () -> {
++            jda.getPlugin().getEss().getGlobalRegionScheduler().execute(jda.getPlugin(), () -> { // Euphyllia
+                 try {
+                     Bukkit.dispatchCommand(new DiscordCommandSender(jda, Bukkit.getConsoleSender(), message ->
+                             event.getMessage().reply(message).queue()).getSender(), command);
+diff --git a/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/ConsoleInjector.java b/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/ConsoleInjector.java
+index 52ea96c64..748c48360 100644
+--- a/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/ConsoleInjector.java
++++ b/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/ConsoleInjector.java
+@@ -11,7 +11,7 @@ import org.apache.logging.log4j.core.LogEvent;
+ import org.apache.logging.log4j.core.Logger;
+ import org.apache.logging.log4j.core.appender.AbstractAppender;
+ import org.apache.logging.log4j.core.config.plugins.Plugin;
+-import org.bukkit.Bukkit;
++//import org.bukkit.Bukkit;
+ 
+ import java.time.Instant;
+ import java.util.concurrent.BlockingQueue;
+@@ -30,7 +30,7 @@ public class ConsoleInjector extends AbstractAppender {
+ 
+     private final JDADiscordService jda;
+     private final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
+-    private final int taskId;
++    private final io.papermc.paper.threadedregions.scheduler.ScheduledTask taskId; // Euphyllia
+     private boolean removed = false;
+ 
+     private final AtomicLong lastRateLimitTime = new AtomicLong(0);
+@@ -41,7 +41,7 @@ public class ConsoleInjector extends AbstractAppender {
+         super("EssentialsX-ConsoleInjector", null, null, false);
+         this.jda = jda;
+         ((Logger) LogManager.getRootLogger()).addAppender(this);
+-        taskId = Bukkit.getScheduler().runTaskTimerAsynchronously(jda.getPlugin(), () -> {
++        taskId = this.jda.getPlugin().getEss().getAsyncScheduler().runAtFixedRate(jda.getPlugin(), scheduledTask -> { // Euphyllia
+             // Check to see if we're supposed to be backing off, preform backoff if the case.
+             if (recentRateLimit.get() < 0) {
+                 if (totalBackoffEvents.get() * 20 >= jda.getSettings().getConsoleSkipDelay() * 60) {
+@@ -74,7 +74,7 @@ public class ConsoleInjector extends AbstractAppender {
+             if (buffer.length() != 0) {
+                 sendMessage(buffer.toString());
+             }
+-        }, 20, 20 * QUEUE_PROCESS_PERIOD_SECONDS).getTaskId();
++        }, 20*50, 20 * QUEUE_PROCESS_PERIOD_SECONDS*50, java.util.concurrent.TimeUnit.MILLISECONDS); // Euphyllia
+     }
+ 
+     private void sendMessage(String content) {
+@@ -148,7 +148,7 @@ public class ConsoleInjector extends AbstractAppender {
+ 
+     public void remove() {
+         ((Logger) LogManager.getRootLogger()).removeAppender(this);
+-        Bukkit.getScheduler().cancelTask(taskId);
++        taskId.cancel(); // Euphyllia
+         messageQueue.clear();
+         if (jda.getConsoleWebhook() != null && !jda.getConsoleWebhook().isShutdown()) {
+             jda.getConsoleWebhook().close();
+diff --git a/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/DiscordCommandSender.java b/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/DiscordCommandSender.java
+index f8389c9e4..0f6927874 100644
+--- a/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/DiscordCommandSender.java
++++ b/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/DiscordCommandSender.java
+@@ -5,14 +5,14 @@ import com.earth2me.essentials.utils.VersionUtil;
+ import net.ess3.provider.providers.BukkitSenderProvider;
+ import net.ess3.provider.providers.PaperCommandSender;
+ import net.essentialsx.discord.JDADiscordService;
+-import org.bukkit.Bukkit;
++//import org.bukkit.Bukkit;
+ import org.bukkit.command.CommandSender;
+ import org.bukkit.command.ConsoleCommandSender;
+-import org.bukkit.scheduler.BukkitTask;
++//import org.bukkit.scheduler.BukkitTask;
+ 
+ public class DiscordCommandSender {
+     private final CommandSender sender;
+-    private BukkitTask task;
++    private io.papermc.paper.threadedregions.scheduler.ScheduledTask task; // Euphyllia
+     private String responseBuffer = "";
+     private long lastTime = System.currentTimeMillis();
+ 
+@@ -23,7 +23,7 @@ public class DiscordCommandSender {
+         };
+         this.sender = getCustomSender(sender, hook);
+ 
+-        task = Bukkit.getScheduler().runTaskTimerAsynchronously(jda.getPlugin(), () -> {
++        task = jda.getPlugin().getEss().getAsyncScheduler().runAtFixedRate(jda.getPlugin(), scheduledTask -> { // Euphyllia
+             if (!responseBuffer.isEmpty() && System.currentTimeMillis() - lastTime >= 1000) {
+                 callback.onMessage(responseBuffer);
+                 responseBuffer = "";
+@@ -34,7 +34,7 @@ public class DiscordCommandSender {
+             if (System.currentTimeMillis() - lastTime >= 20000) {
+                 task.cancel();
+             }
+-        }, 0, 20);
++        }, 1, 20*50, java.util.concurrent.TimeUnit.MILLISECONDS); // Euphyllia
+     }
+ 
+     private CommandSender getCustomSender(final ConsoleCommandSender consoleSender, final BukkitSenderProvider.MessageHook hook) {
+diff --git a/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/DiscordUtil.java b/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/DiscordUtil.java
+index 01f82a511..28d4acf93 100644
+--- a/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/DiscordUtil.java
++++ b/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/DiscordUtil.java
+@@ -235,10 +235,10 @@ public final class DiscordUtil {
+             return;
+         }
+ 
+-        if (Bukkit.getServer().isPrimaryThread()) {
+-            Bukkit.getPluginManager().callEvent(event);
+-        } else {
+-            Bukkit.getScheduler().runTask(jda.getPlugin(), () -> Bukkit.getPluginManager().callEvent(event));
+-        }
++        //if (Bukkit.getServer().isPrimaryThread()) { // Euphyllia
++        Bukkit.getPluginManager().callEvent(event);
++        /*} else {  // Euphyllia
++        Bukkit.getScheduler().runTask(jda.getPlugin(), () -> Bukkit.getPluginManager().callEvent(event));
++        }*/ // Euphyllia
+     }
+ }
+diff --git a/EssentialsDiscord/src/main/resources/plugin.yml b/EssentialsDiscord/src/main/resources/plugin.yml
+index fad076db5..a6d309678 100644
+--- a/EssentialsDiscord/src/main/resources/plugin.yml
++++ b/EssentialsDiscord/src/main/resources/plugin.yml
+@@ -8,6 +8,7 @@ authors: [mdcfe, JRoy, pop4959, Glare]
+ depend: [Essentials]
+ softdepend: [EssentialsChat, PlaceholderAPI]
+ api-version: 1.13
++folia-supported: true # Euphyllia
+ commands:
+   discordbroadcast:
+     description: Broadcasts a message to the specified Discord channel.
+diff --git a/EssentialsDiscordLink/src/main/java/net/essentialsx/discordlink/AccountLinkManager.java b/EssentialsDiscordLink/src/main/java/net/essentialsx/discordlink/AccountLinkManager.java
+index 982a37562..50e1fe6c0 100644
+--- a/EssentialsDiscordLink/src/main/java/net/essentialsx/discordlink/AccountLinkManager.java
++++ b/EssentialsDiscordLink/src/main/java/net/essentialsx/discordlink/AccountLinkManager.java
+@@ -132,19 +132,19 @@ public class AccountLinkManager implements IEssentialsModule, DiscordLinkService
+     }
+ 
+     private void ensureSync(final Runnable runnable) {
+-        if (ess.getServer().isPrimaryThread()) {
++        if (false && ess.getServer().isPrimaryThread()) { // Euphyllia
+             runnable.run();
+             return;
+         }
+-        ess.getEss().scheduleSyncDelayedTask(runnable);
++        this.ess.getEss().getGlobalRegionScheduler().execute(ess, runnable); // Euphyllia
+     }
+ 
+     private void ensureAsync(final Runnable runnable) {
+-        if (!ess.getServer().isPrimaryThread()) {
++        if (false && !ess.getServer().isPrimaryThread()) { // Euphyllia
+             runnable.run();
+             return;
+         }
+-        ess.getEss().runTaskAsynchronously(runnable);
++        this.ess.getEss().getAsyncScheduler().runNow(ess, scheduledTask -> runnable.run()); // Euphyllia
+     }
+ 
+     private String generateCode() {
+diff --git a/EssentialsDiscordLink/src/main/java/net/essentialsx/discordlink/listeners/LinkBukkitListener.java b/EssentialsDiscordLink/src/main/java/net/essentialsx/discordlink/listeners/LinkBukkitListener.java
+index 99cdb76b2..08b0711d7 100644
+--- a/EssentialsDiscordLink/src/main/java/net/essentialsx/discordlink/listeners/LinkBukkitListener.java
++++ b/EssentialsDiscordLink/src/main/java/net/essentialsx/discordlink/listeners/LinkBukkitListener.java
+@@ -10,7 +10,7 @@ import net.essentialsx.api.v2.services.discord.MessageType;
+ import net.essentialsx.discord.util.MessageUtil;
+ import net.essentialsx.discordlink.DiscordLinkSettings;
+ import net.essentialsx.discordlink.EssentialsDiscordLink;
+-import org.bukkit.Bukkit;
++//import org.bukkit.Bukkit;
+ import org.bukkit.event.EventHandler;
+ import org.bukkit.event.EventPriority;
+ import org.bukkit.event.Listener;
+@@ -155,11 +155,11 @@ public class LinkBukkitListener implements Listener {
+         switch (ess.getSettings().getLinkPolicy()) {
+             case KICK: {
+                 final Runnable kickTask = () -> event.getUser().getBase().kickPlayer(AdventureUtil.miniToLegacy(event.getUser().playerTl("discordLinkLoginKick", "/link " + finalCode, ess.getApi().getInviteUrl())));
+-                if (Bukkit.isPrimaryThread()) {
+-                    kickTask.run();
+-                } else {
+-                    ess.getEss().scheduleSyncDelayedTask(kickTask);
+-                }
++                /*if (Bukkit.isPrimaryThread()) { // Euphyllia
++                kickTask.run();
++                } else {*/
++                ess.getEss().getEntityScheduler(event.getUser().getBase()).run(ess, scheduledTask -> kickTask.run(), null);
++                //} // Euphyllia
+                 break;
+             }
+             case FREEZE: {
+diff --git a/EssentialsDiscordLink/src/main/java/net/essentialsx/discordlink/rolesync/RoleSyncManager.java b/EssentialsDiscordLink/src/main/java/net/essentialsx/discordlink/rolesync/RoleSyncManager.java
+index 4545b691c..67e6241b4 100644
+--- a/EssentialsDiscordLink/src/main/java/net/essentialsx/discordlink/rolesync/RoleSyncManager.java
++++ b/EssentialsDiscordLink/src/main/java/net/essentialsx/discordlink/rolesync/RoleSyncManager.java
+@@ -31,7 +31,7 @@ public class RoleSyncManager implements Listener {
+         this.ess = ess;
+         Bukkit.getPluginManager().registerEvents(this, ess);
+         onReload();
+-        this.ess.getEss().runTaskTimerAsynchronously(() -> {
++        this.ess.getEss().getAsyncScheduler().runAtFixedRate(ess, scheduledTask -> { // Euphyllia
+             if (groupToRoleMap.isEmpty() && roleIdToGroupMap.isEmpty()) {
+                 return;
+             }
+@@ -45,7 +45,7 @@ public class RoleSyncManager implements Listener {
+             for (final Map.Entry<String, String> entry : uuidToDiscordCopy.entrySet()) {
+                 sync(new UUIDPlayer(UUID.fromString(entry.getKey())), entry.getValue(), groupToRoleMapCopy, roleIdToGroupMapCopy, primaryOnly, removeGroups, removeRoles);
+             }
+-        }, 0, ess.getSettings().getRoleSyncResyncDelay() * 1200L);
++        }, 1, ess.getSettings().getRoleSyncResyncDelay() * 1200L*50, java.util.concurrent.TimeUnit.MILLISECONDS); // Euphyllia
+     }
+ 
+     public void sync(final UUID uuid, final String discordId) {
+@@ -125,7 +125,7 @@ public class RoleSyncManager implements Listener {
+ 
+     @EventHandler
+     public void onJoin(PlayerJoinEvent event) {
+-        ess.getEss().runTaskAsynchronously(() -> {
++        ess.getEss().getAsyncScheduler().runNow(ess, scheduledTask -> { // Euphyllia
+             if (ess.getLinkManager().isLinked(event.getPlayer().getUniqueId())) {
+                 sync(event.getPlayer().getUniqueId(), ess.getLinkManager().getDiscordId(event.getPlayer().getUniqueId()));
+             }
+diff --git a/EssentialsDiscordLink/src/main/resources/plugin.yml b/EssentialsDiscordLink/src/main/resources/plugin.yml
+index 49df5f7f3..85751f4d1 100644
+--- a/EssentialsDiscordLink/src/main/resources/plugin.yml
++++ b/EssentialsDiscordLink/src/main/resources/plugin.yml
+@@ -7,6 +7,7 @@ description: EssentialsX Discord addon which allows you link your Minecraft and
+ authors: [JRoy]
+ depend: [EssentialsDiscord]
+ api-version: 1.13
++folia-supported: true # Euphyllia
+ commands:
+   link:
+     description: Generates a code to link your Minecraft account to Discord.
+diff --git a/EssentialsGeoIP/src/main/resources/plugin.yml b/EssentialsGeoIP/src/main/resources/plugin.yml
+index 2ddee7b12..e3346d465 100644
+--- a/EssentialsGeoIP/src/main/resources/plugin.yml
++++ b/EssentialsGeoIP/src/main/resources/plugin.yml
+@@ -8,3 +8,4 @@ description: Shows the country or city of a user on login and /whois.
+ authors: [Zenexer, ementalo, Aelux, Brettflan, KimKandor, snowleo, ceulemans, Xeology, kjiang, pop4959]
+ depend: [Essentials]
+ api-version: 1.13
++folia-supported: true # Euphyllia
+diff --git a/EssentialsProtect/src/main/resources/plugin.yml b/EssentialsProtect/src/main/resources/plugin.yml
+index 65764be4a..4c361b0b2 100644
+--- a/EssentialsProtect/src/main/resources/plugin.yml
++++ b/EssentialsProtect/src/main/resources/plugin.yml
+@@ -8,3 +8,4 @@ description: Provides protection for various parts of the world.
+ authors: [Zenexer, ementalo, Aelux, Brettflan, KimKandor, snowleo, ceulemans, Xeology, KHobbits, drtshock]
+ softdepend: [Essentials]
+ api-version: 1.13
++folia-supported: true # Euphyllia
+\ No newline at end of file
+diff --git a/EssentialsSpawn/src/main/java/com/earth2me/essentials/spawn/EssentialsSpawnPlayerListener.java b/EssentialsSpawn/src/main/java/com/earth2me/essentials/spawn/EssentialsSpawnPlayerListener.java
+index c4f21315e..d727e7314 100644
+--- a/EssentialsSpawn/src/main/java/com/earth2me/essentials/spawn/EssentialsSpawnPlayerListener.java
++++ b/EssentialsSpawn/src/main/java/com/earth2me/essentials/spawn/EssentialsSpawnPlayerListener.java
+@@ -71,7 +71,7 @@ class EssentialsSpawnPlayerListener implements Listener {
+     }
+ 
+     void onPlayerJoin(final PlayerJoinEvent event) {
+-        ess.runTaskAsynchronously(() -> delayedJoin(event.getPlayer()));
++        ess.getAsyncScheduler().runNow(ess, scheduledTask -> delayedJoin(event.getPlayer())); // Euphyllia
+     }
+ 
+     private void delayedJoin(final Player player) {
+@@ -82,7 +82,7 @@ class EssentialsSpawnPlayerListener implements Listener {
+                 final User user = ess.getUser(player);
+ 
+                 if (ess.getSettings().isUserInSpawnOnJoinGroup(user) && !user.isAuthorized("essentials.spawn-on-join.exempt")) {
+-                    ess.scheduleSyncDelayedTask(() -> {
++                    ess.getEntityScheduler(player).run(ess, scheduledTask -> { // Euphyllia
+                         final Location spawn = spawns.getSpawn(user.getGroup());
+                         if (spawn == null) {
+                             return;
+@@ -93,7 +93,7 @@ class EssentialsSpawnPlayerListener implements Listener {
+                             return false;
+                         });
+                         user.getAsyncTeleport().nowUnsafe(spawn, TeleportCause.PLUGIN, future);
+-                    });
++                    }, null);// Euphyllia
+                 }
+             }
+ 
+@@ -103,10 +103,10 @@ class EssentialsSpawnPlayerListener implements Listener {
+         final User user = ess.getUser(player);
+ 
+         if (!"none".equalsIgnoreCase(ess.getSettings().getNewbieSpawn())) {
+-            ess.scheduleSyncDelayedTask(new NewPlayerTeleport(user), 1L);
++            ess.getEntityScheduler(player).runDelayed(ess, scheduledTask -> new NewPlayerTeleport(user).run(), null, 1L); // Euphyllia
+         }
+ 
+-        ess.scheduleSyncDelayedTask(() -> {
++        ess.getEntityScheduler(player).runDelayed(ess, scheduledTask -> { // Euphyllia
+             if (!user.getBase().isOnline()) {
+                 return;
+             }
+@@ -131,7 +131,7 @@ class EssentialsSpawnPlayerListener implements Listener {
+             }
+ 
+             logger.log(Level.FINE, "New player join");
+-        }, 2L);
++        }, null, 2L); // Euphyllia
+     }
+ 
+     private class NewPlayerTeleport implements Runnable {
+diff --git a/EssentialsSpawn/src/main/resources/plugin.yml b/EssentialsSpawn/src/main/resources/plugin.yml
+index e0a7b770d..592bfae4d 100644
+--- a/EssentialsSpawn/src/main/resources/plugin.yml
++++ b/EssentialsSpawn/src/main/resources/plugin.yml
+@@ -8,6 +8,7 @@ description: Provides spawn control commands, utilizing Essentials.
+ authors: [Zenexer, ementalo, Aelux, Brettflan, KimKandor, snowleo, ceulemans, Xeology, KHobbits, SupaHam, mdcfe, DoNotSpamPls, JRoy]
+ depend: [Essentials]
+ api-version: 1.13
++folia-supported: true # Euphyllia
+ commands:
+   setspawn:
+     description: Sets the spawn point to your current position.
+diff --git a/EssentialsXMPP/src/main/java/com/earth2me/essentials/xmpp/XMPPManager.java b/EssentialsXMPP/src/main/java/com/earth2me/essentials/xmpp/XMPPManager.java
+index a5199f921..13e90a733 100644
+--- a/EssentialsXMPP/src/main/java/com/earth2me/essentials/xmpp/XMPPManager.java
++++ b/EssentialsXMPP/src/main/java/com/earth2me/essentials/xmpp/XMPPManager.java
+@@ -329,7 +329,7 @@ public class XMPPManager extends Handler implements MessageListener, ChatManager
+ 
+     private void sendCommand(final Chat chat, final String message) {
+         if (config.getList("op-users", String.class).contains(StringUtils.parseBareAddress(chat.getParticipant()))) {
+-            parent.getServer().getScheduler().runTask(parent, () -> {
++            parent.getEss().getGlobalRegionScheduler().run(parent, scheduledTask -> { // Euphyllia
+                 try {
+                     parent.getServer().dispatchCommand(Console.getInstance().getCommandSender(), message.substring(1));
+                 } catch (final Exception ex) {
+diff --git a/EssentialsXMPP/src/main/resources/plugin.yml b/EssentialsXMPP/src/main/resources/plugin.yml
+index 9b2d54c8c..a4365f295 100644
+--- a/EssentialsXMPP/src/main/resources/plugin.yml
++++ b/EssentialsXMPP/src/main/resources/plugin.yml
+@@ -8,6 +8,7 @@ description: Provides XMPP communication.
+ authors: [snowleo, SupaHam, mdcfe]
+ depend: [Essentials]
+ api-version: 1.13
++folia-supported: true # Euphyllia
+ commands:
+   setxmpp:
+     description: Sets your XMPP address.
+-- 
+2.45.1.windows.1
+

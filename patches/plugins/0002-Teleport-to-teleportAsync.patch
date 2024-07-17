@@ -1,0 +1,53 @@
+From 23424f0a36c24c58b84ee98ebd992d78e3ba1393 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Wed, 17 Jul 2024 12:07:49 +0200
+Subject: [PATCH 2/4] Teleport to teleportAsync
+
+---
+ .../main/java/com/earth2me/essentials/AsyncTeleport.java | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java b/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java
+index a4f40daf7..906fb044c 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java
+@@ -141,6 +141,7 @@ public class AsyncTeleport implements IAsyncTeleport {
+     }
+ 
+     private void runOnMain(final Runnable runnable) throws ExecutionException, InterruptedException {
++        if (true) throw new UnsupportedOperationException("Not supported yet"); // Euphyllia
+         if (Bukkit.isPrimaryThread()) {
+             runnable.run();
+             return;
+@@ -170,8 +171,8 @@ public class AsyncTeleport implements IAsyncTeleport {
+             }
+ 
+             try {
+-                runOnMain(() -> teleportee.getBase().eject()); //EntityDismountEvent requires a sync context.
+-            } catch (final ExecutionException | InterruptedException e) {
++                teleportee.getBase().getScheduler().run(ess, (scheduledTask) -> teleportee.getBase().eject(), null); //EntityDismountEvent requires a sync context. // Euphyllia
++            } catch (Exception e) { // Euphyllia
+                 future.completeExceptionally(e);
+                 return;
+             }
+@@ -192,7 +193,7 @@ public class AsyncTeleport implements IAsyncTeleport {
+                 if (ess.getSettings().isTeleportSafetyEnabled()) {
+                     if (ess.getSettings().isForceDisableTeleportSafety()) {
+                         //The chunk we're teleporting to is 100% going to be loaded here, no need to teleport async.
+-                        teleportee.getBase().teleport(loc, cause);
++                        teleportee.getBase().teleportAsync(loc, cause); // Euphyllia
+                     } else {
+                         try {
+                             //There's a chance the safer location is outside the loaded chunk so still teleport async here.
+@@ -209,7 +210,7 @@ public class AsyncTeleport implements IAsyncTeleport {
+             } else {
+                 if (ess.getSettings().isForceDisableTeleportSafety()) {
+                     //The chunk we're teleporting to is 100% going to be loaded here, no need to teleport async.
+-                    teleportee.getBase().teleport(loc, cause);
++                    teleportee.getBase().teleportAsync(loc, cause); // Euphyllia
+                 } else {
+                     if (ess.getSettings().isTeleportToCenterLocation()) {
+                         loc = LocationUtil.getRoundedDestination(loc);
+-- 
+2.45.1.windows.1
+
