@@ -1,7 +1,7 @@
 From f2442fcdd2bb6e01e6d97b26bc0269854d99efb1 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
 Date: Wed, 17 Jul 2024 12:20:56 +0200
-Subject: [PATCH 3/5] Replace BukkitRunnable to FoliaRunnable
+Subject: [PATCH 3/6] Replace BukkitRunnable to FoliaRunnable
 
 ---
  .../essentials/api/FoliaRunnable.java         | 271 ++++++++++++++++++

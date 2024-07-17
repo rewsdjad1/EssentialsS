@@ -1,0 +1,47 @@
+From 163a80c7444b97f1c3fb59d52597785b92c5cf49 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Wed, 17 Jul 2024 15:49:50 +0200
+Subject: [PATCH 6/6] Fix dispatch command
+
+---
+ .../src/main/java/com/earth2me/essentials/Backup.java  |  2 +-
+ .../src/main/java/com/earth2me/essentials/Kit.java     | 10 +++++++---
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/Backup.java b/Essentials/src/main/java/com/earth2me/essentials/Backup.java
+index ecda39ad9..4ae2cf229 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/Backup.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/Backup.java
+@@ -75,7 +75,7 @@ public class Backup implements Runnable {
+         taskLock = new CompletableFuture<>();
+         if ("save-all".equalsIgnoreCase(command)) {
+             final CommandSender cs = server.getConsoleSender();
+-            server.dispatchCommand(cs, "save-all");
++            ess.getGlobalRegionScheduler().execute(ess, () -> server.dispatchCommand(cs, "save-all")); // Euphyllia - Fix dispatch command
+             active = false;
+             taskLock.complete(new Object());
+             return;
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/Kit.java b/Essentials/src/main/java/com/earth2me/essentials/Kit.java
+index 322fad65f..ec264537d 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/Kit.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/Kit.java
+@@ -260,9 +260,13 @@ public class Kit {
+                 t.pay(user, OverflowType.DROP);
+             }
+ 
+-            for (final String cmd : commandQueue) {
+-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+-            }
++            // Euphyllia start - Fix dispatch command
++            ess.getGlobalRegionScheduler().execute(ess, () -> {
++                for (final String cmd : commandQueue) {
++                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
++                }
++            });
++            // Euphyllia end - Fix dispatch command
+ 
+             if (spew) {
+                 user.sendTl("kitInvFull");
+-- 
+2.45.1.windows.1
+
