@@ -6,6 +6,7 @@ REPO_DIR="$SCRIPT_DIR/Essentials"
 REPO_DIR_PATCH="$SCRIPT_DIR/Essentials-Patchs"
 REPO_URL="https://github.com/EssentialsX/Essentials"
 PATCHES_DIR="$SCRIPT_DIR/patches/plugins"
+BRANCH_GIT="2.x"
 
 # S'assurer que le répertoire des patches existe
 mkdir -p "$PATCHES_DIR"
@@ -27,7 +28,7 @@ reclone_repo() {
 create_patches() {
     cd "$REPO_DIR_PATCH" || exit
     echo "Création des patches..."
-    git format-patch -o "$PATCHES_DIR" origin/master
+    git format-patch -o "$PATCHES_DIR" origin/$BRANCH_GIT
     echo "Les patches ont été créés dans $REPO_DIR_PATCH"
 }
 

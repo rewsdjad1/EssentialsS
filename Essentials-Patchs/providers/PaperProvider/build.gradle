@@ -1,0 +1,25 @@
+plugins {
+    id("essentials.base-conventions")
+    id("io.github.goooler.shadow")  // Rebrand
+}
+
+java {
+    disableAutoTargetJvm()
+}
+
+dependencies {
+    implementation(project(':providers:BaseProviders')) {
+        exclude(module: 'spigot-api')
+    }
+    compileOnly 'io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT' // Rebrand
+    //compileOnly 'io.papermc.paper:paper-mojangapi:1.20.4-R0.1-SNAPSHOT' // Rebrand
+}
+
+essentials {
+    injectBukkitApi.set(false)
+    injectBstats.set(false)
+}
+
+shadowJar {
+    relocate 'net.kyori.adventure', 'net.essentialsx.temp.adventure'
+}

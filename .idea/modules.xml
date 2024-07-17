@@ -57,6 +57,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/providers/NMSReflectionProvider/net.essentialsx.EssentialsXParent.providers.NMSReflectionProvider.main.iml" filepath="$PROJECT_DIR$/.idea/modules/providers/NMSReflectionProvider/net.essentialsx.EssentialsXParent.providers.NMSReflectionProvider.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/providers/NMSReflectionProvider/net.essentialsx.EssentialsXParent.providers.NMSReflectionProvider.test.iml" filepath="$PROJECT_DIR$/.idea/modules/providers/NMSReflectionProvider/net.essentialsx.EssentialsXParent.providers.NMSReflectionProvider.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/providers/PaperProvider/net.essentialsx.EssentialsXParent.providers.PaperProvider.main.iml" filepath="$PROJECT_DIR$/.idea/modules/providers/PaperProvider/net.essentialsx.EssentialsXParent.providers.PaperProvider.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/providers/PaperProvider/net.essentialsx.EssentialsXParent.providers.PaperProvider.test.iml" filepath="$PROJECT_DIR$/.idea/modules/providers/PaperProvider/net.essentialsx.EssentialsXParent.providers.PaperProvider.test.iml" />
     </modules>
   </component>
 </project>
