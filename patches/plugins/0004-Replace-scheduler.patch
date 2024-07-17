@@ -1,6 +1,6 @@
-From 04b6e371988ec516c84435f57c18216891f12e62 Mon Sep 17 00:00:00 2001
+From 5820a5a9496be2ce7e103583e3e9d81ec26fadf0 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Wed, 17 Jul 2024 16:13:38 +0200
+Date: Wed, 17 Jul 2024 16:37:47 +0200
 Subject: [PATCH 4/6] Replace scheduler
 
 ---
@@ -983,7 +983,7 @@ index e47e25cda..aedec1bdb 100644
                  getLogger().log(Level.SEVERE, AdventureUtil.miniToLegacy(tlLiteral("discordErrorLogin", e.getMessage())));
                  if (ess.getSettings().isDebug()) {
 diff --git a/EssentialsDiscord/src/main/java/net/essentialsx/discord/JDADiscordService.java b/EssentialsDiscord/src/main/java/net/essentialsx/discord/JDADiscordService.java
-index 2843e55af..318614ce0 100644
+index 2843e55af..07c050e90 100644
 --- a/EssentialsDiscord/src/main/java/net/essentialsx/discord/JDADiscordService.java
 +++ b/EssentialsDiscord/src/main/java/net/essentialsx/discord/JDADiscordService.java
 @@ -237,7 +237,7 @@ public class JDADiscordService implements DiscordService, IEssentialsModule {
@@ -1005,7 +1005,7 @@ index 2843e55af..318614ce0 100644
 -            Bukkit.getScheduler().runTask(plugin, () -> Bukkit.getPluginManager().callEvent(event));
 -        }
 +        //if (Bukkit.getServer().isPrimaryThread()) { // Euphyllia
-+        Bukkit.getPluginManager().callEvent(event);
++        getPlugin().getEss().getGlobalRegionScheduler().execute(getPlugin(), () -> Bukkit.getPluginManager().callEvent(event));
 +        /*} else {
 +        Bukkit.getScheduler().runTask(plugin, () -> Bukkit.getPluginManager().callEvent(event));
 +        }*/ // Euphyllia
@@ -1175,7 +1175,7 @@ index f8389c9e4..0f6927874 100644
  
      private CommandSender getCustomSender(final ConsoleCommandSender consoleSender, final BukkitSenderProvider.MessageHook hook) {
 diff --git a/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/DiscordUtil.java b/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/DiscordUtil.java
-index 01f82a511..28d4acf93 100644
+index 01f82a511..c8da3f672 100644
 --- a/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/DiscordUtil.java
 +++ b/EssentialsDiscord/src/main/java/net/essentialsx/discord/util/DiscordUtil.java
 @@ -235,10 +235,10 @@ public final class DiscordUtil {
@@ -1188,7 +1188,7 @@ index 01f82a511..28d4acf93 100644
 -            Bukkit.getScheduler().runTask(jda.getPlugin(), () -> Bukkit.getPluginManager().callEvent(event));
 -        }
 +        //if (Bukkit.getServer().isPrimaryThread()) { // Euphyllia
-+        Bukkit.getPluginManager().callEvent(event);
++        jda.getPlugin().getEss().getGlobalRegionScheduler().execute(jda.getPlugin(), () -> Bukkit.getPluginManager().callEvent(event));
 +        /*} else {  // Euphyllia
 +        Bukkit.getScheduler().runTask(jda.getPlugin(), () -> Bukkit.getPluginManager().callEvent(event));
 +        }*/ // Euphyllia
