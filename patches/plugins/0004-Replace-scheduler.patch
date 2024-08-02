@@ -1,6 +1,6 @@
-From 56fb27a9562798b789f5508adcb766d0caa7e357 Mon Sep 17 00:00:00 2001
+From 69feb5cf6e5195e19283642506136de7b12f87cd Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Mon, 22 Jul 2024 10:39:13 +0200
+Date: Fri, 2 Aug 2024 13:19:42 +0200
 Subject: [PATCH 4/6] Replace scheduler
 
 ---
@@ -14,7 +14,7 @@ Subject: [PATCH 4/6] Replace scheduler
  .../essentials/EssentialsPlayerListener.java  | 28 ++++++++--------
  .../com/earth2me/essentials/IEssentials.java  | 10 ++++++
  .../earth2me/essentials/RandomTeleport.java   |  2 +-
- .../com/earth2me/essentials/Settings.java     |  4 +--
+ .../com/earth2me/essentials/Settings.java     |  6 ++--
  .../earth2me/essentials/TimedTeleport.java    | 12 +++----
  .../java/com/earth2me/essentials/User.java    |  4 +--
  .../commands/Commandbalancetop.java           | 16 ++++-----
@@ -52,7 +52,7 @@ Subject: [PATCH 4/6] Replace scheduler
  EssentialsSpawn/src/main/resources/plugin.yml |  1 +
  .../earth2me/essentials/xmpp/XMPPManager.java |  2 +-
  EssentialsXMPP/src/main/resources/plugin.yml  |  1 +
- 48 files changed, 198 insertions(+), 141 deletions(-)
+ 48 files changed, 199 insertions(+), 142 deletions(-)
 
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java b/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java
 index 906fb044c..0d8365bdd 100644
@@ -478,10 +478,19 @@ index b1b683ab6..22b1bdd07 100644
                  calculateRandomLocation(center, minRange, maxRange).thenAccept(location -> {
                      if (isValidRandomLocation(location)) {
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/Settings.java b/Essentials/src/main/java/com/earth2me/essentials/Settings.java
-index bd8d64b4f..df89a26f9 100644
+index 07ab7c3b2..d1658c850 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/Settings.java
 +++ b/Essentials/src/main/java/com/earth2me/essentials/Settings.java
-@@ -722,7 +722,7 @@ public class Settings implements net.ess3.api.ISettings {
+@@ -709,7 +709,7 @@ public class Settings implements net.ess3.api.ISettings {
+             if (reloadCount.get() < 2) {
+                 // on startup: add plugins again in case they registered commands with the new API
+                 // we need to schedule this task before any of the below tasks using _addAlternativeCommand.
+-                ess.scheduleSyncDelayedTask(() -> {
++                ess.getGlobalRegionScheduler().execute(ess, () -> {
+                     for (final Plugin plugin : ess.getServer().getPluginManager().getPlugins()) {
+                         if (plugin.isEnabled()) {
+                             ess.getAlternativeCommandsHandler().addPlugin(plugin);
+@@ -735,7 +735,7 @@ public class Settings implements net.ess3.api.ISettings {
  
                      // This is 2 because Settings are reloaded twice in the startup lifecycle
                      if (reloadCount.get() < 2) {
@@ -490,7 +499,7 @@ index bd8d64b4f..df89a26f9 100644
                      } else {
                          _addAlternativeCommand(effectiveAlias, toDisable);
                      }
-@@ -735,7 +735,7 @@ public class Settings implements net.ess3.api.ISettings {
+@@ -748,7 +748,7 @@ public class Settings implements net.ess3.api.ISettings {
                      ess.getLogger().log(Level.INFO, "Syncing commands");
                  }
                  if (reloadCount.get() < 2) {
