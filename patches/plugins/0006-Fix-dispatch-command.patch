@@ -1,7 +1,7 @@
 From c1537919e3f1e64676ec4cff7af00f364c4937a2 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
 Date: Fri, 2 Aug 2024 13:19:43 +0200
-Subject: [PATCH 6/6] Fix dispatch command
+Subject: [PATCH 6/7] Fix dispatch command
 
 ---
  .../src/main/java/com/earth2me/essentials/Backup.java  |  2 +-

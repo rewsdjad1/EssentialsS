@@ -1,0 +1,39 @@
+From 2fd83d344128657f601d4abc483d8d2c66114374 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sun, 4 Aug 2024 22:09:12 +0200
+Subject: [PATCH 7/7] Fix command gc
+
+---
+ .../java/com/earth2me/essentials/commands/Commandgc.java  | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java
+index 16082f3c9..940993f53 100644
+--- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java
++++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java
+@@ -47,17 +47,19 @@ public class Commandgc extends EssentialsCommand {
+                     break;
+             }
+ 
+-            int tileEntities = 0;
++            java.util.concurrent.atomic.AtomicInteger tileEntities = new java.util.concurrent.atomic.AtomicInteger();
+ 
+             try {
+                 for (final Chunk chunk : w.getLoadedChunks()) {
+-                    tileEntities += chunk.getTileEntities().length;
++                    org.bukkit.Bukkit.getRegionScheduler().run(ess, chunk.getWorld(), chunk.getX(), chunk.getZ(), scheduledTask ->
++                        tileEntities.addAndGet(chunk.getTileEntities().length)
++                    );
+                 }
+             } catch (final java.lang.ClassCastException ex) {
+                 ess.getLogger().log(Level.SEVERE, "Corrupted chunk data on world " + w, ex);
+             }
+ 
+-            sender.sendTl("gcWorld", worldType, w.getName(), w.getLoadedChunks().length, w.getEntities().size(), tileEntities);
++            sender.sendTl("gcWorld", worldType, w.getName(), w.getLoadedChunks().length, w.getEntities().size(), tileEntities.get());
+         }
+     }
+ }
+-- 
+2.45.1.windows.1
+
