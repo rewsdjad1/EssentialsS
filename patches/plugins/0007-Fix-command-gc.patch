@@ -1,14 +1,14 @@
-From 2fd83d344128657f601d4abc483d8d2c66114374 Mon Sep 17 00:00:00 2001
+From 7e90d8af78977d7d1be716587e8fbdc6b410b58c Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 4 Aug 2024 22:09:12 +0200
-Subject: [PATCH 7/7] Fix command gc
+Date: Wed, 14 Aug 2024 00:14:27 +0200
+Subject: [PATCH 7/8] Fix command gc
 
 ---
  .../java/com/earth2me/essentials/commands/Commandgc.java  | 8 +++++---
  1 file changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java
-index 16082f3c9..940993f53 100644
+index 16082f3c9..0b4d7fb0a 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java
 +++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java
 @@ -47,17 +47,19 @@ public class Commandgc extends EssentialsCommand {
