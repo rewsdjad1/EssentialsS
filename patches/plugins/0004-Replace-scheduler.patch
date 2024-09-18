@@ -1,6 +1,6 @@
-From 5e639d26968c0c0da93d4308e2ae43bbad374af5 Mon Sep 17 00:00:00 2001
+From 6b9b57047df6251f719bdb94f35f0cf2d8551e9e Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Wed, 28 Aug 2024 02:54:53 +0200
+Date: Wed, 18 Sep 2024 19:04:56 +0200
 Subject: [PATCH 4/8] Replace scheduler
 
 ---
@@ -47,12 +47,12 @@ Subject: [PATCH 4/8] Replace scheduler
  .../discordlink/rolesync/RoleSyncManager.java |  6 ++--
  .../src/main/resources/plugin.yml             |  1 +
  EssentialsGeoIP/src/main/resources/plugin.yml |  1 +
- .../src/main/resources/plugin.yml             |  1 +
+ .../src/main/resources/plugin.yml             | 21 ++++++------
  .../spawn/EssentialsSpawnPlayerListener.java  | 12 +++----
  EssentialsSpawn/src/main/resources/plugin.yml |  1 +
  .../earth2me/essentials/xmpp/XMPPManager.java |  2 +-
  EssentialsXMPP/src/main/resources/plugin.yml  |  1 +
- 48 files changed, 199 insertions(+), 142 deletions(-)
+ 48 files changed, 209 insertions(+), 152 deletions(-)
 
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java b/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java
 index 906fb044c..0d8365bdd 100644
@@ -202,7 +202,7 @@ index 4008b3fe5..aa265ef49 100644
      }
  
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/Essentials.java b/Essentials/src/main/java/com/earth2me/essentials/Essentials.java
-index e2a2ff13e..d32c00769 100644
+index 936f697bb..31c66b698 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/Essentials.java
 +++ b/Essentials/src/main/java/com/earth2me/essentials/Essentials.java
 @@ -530,7 +530,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
@@ -729,10 +729,10 @@ index 24a54e272..3129c344f 100644
                  sender.sendComponent(component);
              }
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandkittycannon.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandkittycannon.java
-index e40234f52..094f6a3f3 100644
+index 18397f82f..c25c5f91c 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandkittycannon.java
 +++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandkittycannon.java
-@@ -42,11 +42,11 @@ public class Commandkittycannon extends EssentialsCommand {
+@@ -49,11 +49,11 @@ public class Commandkittycannon extends EssentialsCommand {
      @Override
      protected void run(final Server server, final User user, final String commandLabel, final String[] args) throws Exception {
          final Entity ocelot = Mob.CAT.getType() == null ? spawnOcelot(server, user) : spawnCat(server, user);
@@ -1326,13 +1326,30 @@ index 2ddee7b12..e3346d465 100644
  api-version: 1.13
 +folia-supported: true # Euphyllia
 diff --git a/EssentialsProtect/src/main/resources/plugin.yml b/EssentialsProtect/src/main/resources/plugin.yml
-index 65764be4a..4c361b0b2 100644
+index 65764be4a..c681f4683 100644
 --- a/EssentialsProtect/src/main/resources/plugin.yml
 +++ b/EssentialsProtect/src/main/resources/plugin.yml
-@@ -8,3 +8,4 @@ description: Provides protection for various parts of the world.
- authors: [Zenexer, ementalo, Aelux, Brettflan, KimKandor, snowleo, ceulemans, Xeology, KHobbits, drtshock]
- softdepend: [Essentials]
- api-version: 1.13
+@@ -1,10 +1,11 @@
+-# This determines the command prefix when there are conflicts (/name:home, /name:help, etc.)
+-name: EssentialsProtect
+-main: com.earth2me.essentials.protect.EssentialsProtect
+-# Note to developers: This next line cannot change, or the automatic versioning system will break.
+-version: ${full.version}
+-website: https://essentialsx.net/
+-description: Provides protection for various parts of the world.
+-authors: [Zenexer, ementalo, Aelux, Brettflan, KimKandor, snowleo, ceulemans, Xeology, KHobbits, drtshock]
+-softdepend: [Essentials]
+-api-version: 1.13
++# This determines the command prefix when there are conflicts (/name:home, /name:help, etc.)
++name: EssentialsProtect
++main: com.earth2me.essentials.protect.EssentialsProtect
++# Note to developers: This next line cannot change, or the automatic versioning system will break.
++version: ${full.version}
++website: https://essentialsx.net/
++description: Provides protection for various parts of the world.
++authors: [Zenexer, ementalo, Aelux, Brettflan, KimKandor, snowleo, ceulemans, Xeology, KHobbits, drtshock]
++softdepend: [Essentials]
++api-version: 1.13
 +folia-supported: true # Euphyllia
 \ No newline at end of file
 diff --git a/EssentialsSpawn/src/main/java/com/earth2me/essentials/spawn/EssentialsSpawnPlayerListener.java b/EssentialsSpawn/src/main/java/com/earth2me/essentials/spawn/EssentialsSpawnPlayerListener.java

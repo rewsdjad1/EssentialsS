@@ -1,28 +1,28 @@
-From 665ec1d1974820e2edc42aace94e9cf1828a9995 Mon Sep 17 00:00:00 2001
+From 004681f8e83db8e3a22c4d69d95d6ede42203225 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Wed, 28 Aug 2024 02:54:40 +0200
+Date: Wed, 18 Sep 2024 19:04:55 +0200
 Subject: [PATCH 1/8] Rebrand
 
 ---
- Essentials/src/main/resources/plugin.yml              |  1 +
- .../java/com/earth2me/essentials/EconomyTest.java     |  0
- .../java/com/earth2me/essentials/MessagingTest.java   |  0
- .../java/com/earth2me/essentials/StorageTest.java     |  0
- .../java/com/earth2me/essentials/ToggleTest.java      |  0
- .../java/com/earth2me/essentials/UserTest.java        |  0
- .../java/com/earth2me/essentials/UtilTest.java        |  0
- .../com/earth2me/essentials/utils/FormatUtilTest.java |  0
- .../com/earth2me/essentials/utils/StringUtilTest.java |  0
- EssentialsDiscord/build.gradle                        |  4 ++--
- build-logic/build.gradle.kts                          |  2 +-
- .../kotlin/essentials.base-conventions.gradle.kts     |  4 ++--
- .../kotlin/essentials.module-conventions.gradle.kts   |  9 +++++++++
- .../main/kotlin/essentials.shadow-module.gradle.kts   | 11 ++++++++++-
- build.gradle                                          |  2 +-
- providers/BaseProviders/build.gradle                  | 10 ++++++++++
- .../ess3/provider/providers/BukkitSenderProvider.java |  7 +++++++
- providers/PaperProvider/build.gradle                  |  6 +++---
- 18 files changed, 46 insertions(+), 10 deletions(-)
+ Essentials/src/main/resources/plugin.yml      |  1 +
+ .../com/earth2me/essentials/EconomyTest.java  |  0
+ .../earth2me/essentials/MessagingTest.java    |  0
+ .../com/earth2me/essentials/StorageTest.java  |  0
+ .../com/earth2me/essentials/ToggleTest.java   |  0
+ .../com/earth2me/essentials/UserTest.java     |  0
+ .../com/earth2me/essentials/UtilTest.java     |  0
+ .../essentials/utils/FormatUtilTest.java      |  0
+ .../essentials/utils/StringUtilTest.java      |  0
+ EssentialsDiscord/build.gradle                |  4 ++--
+ build-logic/build.gradle.kts                  |  2 +-
+ .../essentials.base-conventions.gradle.kts    |  4 ++--
+ .../essentials.module-conventions.gradle.kts  |  9 +++++++
+ .../essentials.shadow-module.gradle.kts       | 11 ++++++++-
+ build.gradle                                  |  2 +-
+ providers/BaseProviders/build.gradle          | 24 +++++++++++++------
+ .../providers/BukkitSenderProvider.java       |  7 ++++++
+ providers/PaperProvider/build.gradle          |  6 ++---
+ 18 files changed, 53 insertions(+), 17 deletions(-)
  rename Essentials/src/{test => testaaa}/java/com/earth2me/essentials/EconomyTest.java (100%)
  rename Essentials/src/{test => testaaa}/java/com/earth2me/essentials/MessagingTest.java (100%)
  rename Essentials/src/{test => testaaa}/java/com/earth2me/essentials/StorageTest.java (100%)
@@ -77,7 +77,7 @@ similarity index 100%
 rename from Essentials/src/test/java/com/earth2me/essentials/utils/StringUtilTest.java
 rename to Essentials/src/testaaa/java/com/earth2me/essentials/utils/StringUtilTest.java
 diff --git a/EssentialsDiscord/build.gradle b/EssentialsDiscord/build.gradle
-index 555fec855..e5c417981 100644
+index 7ce41fde4..8f3f1a2b1 100644
 --- a/EssentialsDiscord/build.gradle
 +++ b/EssentialsDiscord/build.gradle
 @@ -8,10 +8,10 @@ dependencies {
@@ -90,7 +90,7 @@ index 555fec855..e5c417981 100644
      }
 -    compileOnly 'org.apache.logging.log4j:log4j-core:2.17.1'
 +    compileOnly 'org.apache.logging.log4j:log4j-core:2.23.1' // Rebrand - update
-     compileOnly 'me.clip:placeholderapi:2.10.9'
+     compileOnly 'me.clip:placeholderapi:2.11.6'
  }
  
 diff --git a/build-logic/build.gradle.kts b/build-logic/build.gradle.kts
@@ -187,13 +187,24 @@ index 4a859e015..37d054805 100644
  project.ext {
      GIT_COMMIT = !indraGit.isPresent() ? "unknown" : indraGit.commit().abbreviate(7).name()
 diff --git a/providers/BaseProviders/build.gradle b/providers/BaseProviders/build.gradle
-index 99176e222..b255f304b 100644
+index 99176e222..ef6b5616c 100644
 --- a/providers/BaseProviders/build.gradle
 +++ b/providers/BaseProviders/build.gradle
-@@ -5,3 +5,13 @@ plugins {
- essentials {
-     injectBstats.set(false)
- }
+@@ -1,7 +1,17 @@
+-plugins {
+-    id("essentials.base-conventions")
+-}
+-
+-essentials {
+-    injectBstats.set(false)
+-}
++plugins {
++    id("essentials.base-conventions")
++}
++
++essentials {
++    injectBstats.set(false)
++}
 +
 +// Rebrand
 +dependencies {
