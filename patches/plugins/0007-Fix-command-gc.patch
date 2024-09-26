@@ -1,17 +1,17 @@
-From 92fb43e833ba6ca95688d621079c93b985111e25 Mon Sep 17 00:00:00 2001
+From a654026fdfe4c76ff70ee531d7087d6db193820e Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Thu, 26 Sep 2024 19:16:12 +0200
+Date: Thu, 26 Sep 2024 19:35:21 +0200
 Subject: [PATCH 7/8] Fix command gc
 
 ---
- .../com/earth2me/essentials/commands/Commandgc.java  | 12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
+ .../com/earth2me/essentials/commands/Commandgc.java   | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java
-index 16082f3c9..058c84b2f 100644
+index 16082f3c9..98b79b880 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java
 +++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java
-@@ -47,17 +47,21 @@ public class Commandgc extends EssentialsCommand {
+@@ -47,17 +47,20 @@ public class Commandgc extends EssentialsCommand {
                      break;
              }
  
@@ -23,10 +23,9 @@ index 16082f3c9..058c84b2f 100644
                  for (final Chunk chunk : w.getLoadedChunks()) {
 -                    tileEntities += chunk.getTileEntities().length;
 +                    org.bukkit.Bukkit.getRegionScheduler().run(ess, chunk.getWorld(), chunk.getX(), chunk.getZ(), scheduledTask -> {
-+                                tileEntities.addAndGet(chunk.getTileEntities().length);
-+                                entitiesSize.addAndGet(chunk.getEntities().length);
-+                            }
-+                    );
++                        tileEntities.addAndGet(chunk.getTileEntities().length);
++                        entitiesSize.addAndGet(chunk.getEntities().length);
++                    });
                  }
              } catch (final java.lang.ClassCastException ex) {
                  ess.getLogger().log(Level.SEVERE, "Corrupted chunk data on world " + w, ex);
