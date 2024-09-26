@@ -1,28 +1,31 @@
-From fb63dc949f6d06cfe15e6f7900af6a16fd07224e Mon Sep 17 00:00:00 2001
+From 92fb43e833ba6ca95688d621079c93b985111e25 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Wed, 18 Sep 2024 19:04:57 +0200
+Date: Thu, 26 Sep 2024 19:16:12 +0200
 Subject: [PATCH 7/8] Fix command gc
 
 ---
- .../java/com/earth2me/essentials/commands/Commandgc.java  | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ .../com/earth2me/essentials/commands/Commandgc.java  | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
 
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java
-index 16082f3c9..0b4d7fb0a 100644
+index 16082f3c9..058c84b2f 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java
 +++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandgc.java
-@@ -47,17 +47,19 @@ public class Commandgc extends EssentialsCommand {
+@@ -47,17 +47,21 @@ public class Commandgc extends EssentialsCommand {
                      break;
              }
  
 -            int tileEntities = 0;
+-
 +            final java.util.concurrent.atomic.AtomicInteger tileEntities = new java.util.concurrent.atomic.AtomicInteger();
- 
++            final java.util.concurrent.atomic.AtomicInteger entitiesSize = new java.util.concurrent.atomic.AtomicInteger(0);
              try {
                  for (final Chunk chunk : w.getLoadedChunks()) {
 -                    tileEntities += chunk.getTileEntities().length;
-+                    org.bukkit.Bukkit.getRegionScheduler().run(ess, chunk.getWorld(), chunk.getX(), chunk.getZ(), scheduledTask ->
-+                        tileEntities.addAndGet(chunk.getTileEntities().length)
++                    org.bukkit.Bukkit.getRegionScheduler().run(ess, chunk.getWorld(), chunk.getX(), chunk.getZ(), scheduledTask -> {
++                                tileEntities.addAndGet(chunk.getTileEntities().length);
++                                entitiesSize.addAndGet(chunk.getEntities().length);
++                            }
 +                    );
                  }
              } catch (final java.lang.ClassCastException ex) {
@@ -30,7 +33,7 @@ index 16082f3c9..0b4d7fb0a 100644
              }
  
 -            sender.sendTl("gcWorld", worldType, w.getName(), w.getLoadedChunks().length, w.getEntities().size(), tileEntities);
-+            sender.sendTl("gcWorld", worldType, w.getName(), w.getLoadedChunks().length, w.getEntities().size(), tileEntities.get());
++            sender.sendTl("gcWorld", worldType, w.getName(), w.getLoadedChunks().length, entitiesSize.get(), tileEntities.get());
          }
      }
  }
