@@ -16,7 +16,7 @@ index 65e7ad9a6..9c2b2bb8a 100644
  
      private void removeHandler(final CommandSource sender, final List<String> types, final List<String> customTypes, final World world, int radius) {
 -        int removed = 0;
-+        java.util.concurrent.atomic.AtomicInteger removed = new java.util.concurrent.atomic.AtomicInteger();
++        final java.util.concurrent.atomic.AtomicInteger removed = new java.util.concurrent.atomic.AtomicInteger();
          if (radius > 0) {
              radius *= radius;
          }
