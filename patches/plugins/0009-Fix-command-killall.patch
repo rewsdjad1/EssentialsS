@@ -1,6 +1,6 @@
-From 606abdd51144d913be051b561163f9d64ee0b903 Mon Sep 17 00:00:00 2001
+From bb540e2c51f7a0e7e8b1f959b3892f52c43a0aa8 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sat, 28 Sep 2024 00:11:24 +0200
+Date: Wed, 2 Oct 2024 11:15:21 +0200
 Subject: [PATCH 9/9] Fix command killall
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH 9/9] Fix command killall
  1 file changed, 119 insertions(+), 116 deletions(-)
 
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandremove.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandremove.java
-index 65e7ad9a6..9c2b2bb8a 100644
+index 65e7ad9a6..444010092 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandremove.java
 +++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandremove.java
 @@ -106,11 +106,12 @@ public class Commandremove extends EssentialsCommand {
