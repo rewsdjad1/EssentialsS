@@ -1,6 +1,6 @@
-From 412eed54c23071edc4b19e9d8adcf2820e528f09 Mon Sep 17 00:00:00 2001
+From 749ad4a2562c62c26d8b0b6f31569bc5d39af556 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Mon, 21 Oct 2024 20:09:50 +0200
+Date: Sun, 17 Nov 2024 23:12:32 +0100
 Subject: [PATCH 4/9] Replace scheduler
 
 ---
@@ -329,7 +329,7 @@ index 1305ba91c..cd4cd4438 100644
                      event.setCancelled(true);
                      return;
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/EssentialsPlayerListener.java b/Essentials/src/main/java/com/earth2me/essentials/EssentialsPlayerListener.java
-index 0b3ad90b8..1918ec2c3 100644
+index 1c40363d2..3d4903164 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/EssentialsPlayerListener.java
 +++ b/Essentials/src/main/java/com/earth2me/essentials/EssentialsPlayerListener.java
 @@ -82,7 +82,7 @@ import static com.earth2me.essentials.I18n.tlLiteral;
@@ -662,7 +662,7 @@ index eda36424c..8630fbd13 100644
                  final StringWriter sw = new StringWriter();
                  final YamlConfigurationLoader loader = YamlConfigurationLoader.builder().sink(() -> new BufferedWriter(sw)).indent(2).nodeStyle(NodeStyle.BLOCK).build();
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandessentials.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandessentials.java
-index 24a54e272..3129c344f 100644
+index d460b8e67..81b16232b 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandessentials.java
 +++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandessentials.java
 @@ -36,7 +36,7 @@ import org.bukkit.inventory.ItemStack;
