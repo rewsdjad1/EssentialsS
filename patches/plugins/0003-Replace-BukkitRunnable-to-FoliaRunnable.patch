@@ -1,6 +1,6 @@
-From c32dab545ba403195002b4c404dc3d596ed531b2 Mon Sep 17 00:00:00 2001
+From 7941692a2df61b66d354830f451b855edc8be9a8 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 24 Nov 2024 19:25:15 +0100
+Date: Tue, 10 Dec 2024 19:36:28 +0100
 Subject: [PATCH 3/9] Replace BukkitRunnable to FoliaRunnable
 
 ---
@@ -317,5 +317,5 @@ index 1d65353ef..d460b8e67 100644
              this.sound = sound;
              this.players = players;
 -- 
-2.45.1.windows.1
+2.47.1.windows.1
 

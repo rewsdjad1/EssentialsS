@@ -1,6 +1,6 @@
-From ed0f46bcf220239c3ed7548338ad38a1f65cceed Mon Sep 17 00:00:00 2001
+From bdafaf82efbdae3bf15dfea9595036d978c10f47 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 24 Nov 2024 19:25:16 +0100
+Date: Tue, 10 Dec 2024 19:36:30 +0100
 Subject: [PATCH 6/9] Fix dispatch command
 
 ---
@@ -43,5 +43,5 @@ index 322fad65f..ec264537d 100644
              if (spew) {
                  user.sendTl("kitInvFull");
 -- 
-2.45.1.windows.1
+2.47.1.windows.1
 

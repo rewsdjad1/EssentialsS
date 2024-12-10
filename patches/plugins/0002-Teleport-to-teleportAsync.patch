@@ -1,6 +1,6 @@
-From fb0252c904c03b909f10b2fa0d303b99f2665c3b Mon Sep 17 00:00:00 2001
+From dc2f7a5608ed88cf54636b8b1fe85153ffa73799 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 24 Nov 2024 19:25:14 +0100
+Date: Tue, 10 Dec 2024 19:36:28 +0100
 Subject: [PATCH 2/9] Teleport to teleportAsync
 
 ---
@@ -8,10 +8,10 @@ Subject: [PATCH 2/9] Teleport to teleportAsync
  1 file changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java b/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java
-index a4f40daf7..906fb044c 100644
+index fc98e97e1..4d0cedd55 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java
 +++ b/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java
-@@ -141,6 +141,7 @@ public class AsyncTeleport implements IAsyncTeleport {
+@@ -140,6 +140,7 @@ public class AsyncTeleport implements IAsyncTeleport {
      }
  
      private void runOnMain(final Runnable runnable) throws ExecutionException, InterruptedException {
@@ -19,7 +19,7 @@ index a4f40daf7..906fb044c 100644
          if (Bukkit.isPrimaryThread()) {
              runnable.run();
              return;
-@@ -170,8 +171,8 @@ public class AsyncTeleport implements IAsyncTeleport {
+@@ -169,8 +170,8 @@ public class AsyncTeleport implements IAsyncTeleport {
              }
  
              try {
@@ -30,7 +30,7 @@ index a4f40daf7..906fb044c 100644
                  future.completeExceptionally(e);
                  return;
              }
-@@ -192,7 +193,7 @@ public class AsyncTeleport implements IAsyncTeleport {
+@@ -191,7 +192,7 @@ public class AsyncTeleport implements IAsyncTeleport {
                  if (ess.getSettings().isTeleportSafetyEnabled()) {
                      if (ess.getSettings().isForceDisableTeleportSafety()) {
                          //The chunk we're teleporting to is 100% going to be loaded here, no need to teleport async.
@@ -39,7 +39,7 @@ index a4f40daf7..906fb044c 100644
                      } else {
                          try {
                              //There's a chance the safer location is outside the loaded chunk so still teleport async here.
-@@ -209,7 +210,7 @@ public class AsyncTeleport implements IAsyncTeleport {
+@@ -208,7 +209,7 @@ public class AsyncTeleport implements IAsyncTeleport {
              } else {
                  if (ess.getSettings().isForceDisableTeleportSafety()) {
                      //The chunk we're teleporting to is 100% going to be loaded here, no need to teleport async.
@@ -49,5 +49,5 @@ index a4f40daf7..906fb044c 100644
                      if (ess.getSettings().isTeleportToCenterLocation()) {
                          loc = LocationUtil.getRoundedDestination(loc);
 -- 
-2.45.1.windows.1
+2.47.1.windows.1
 

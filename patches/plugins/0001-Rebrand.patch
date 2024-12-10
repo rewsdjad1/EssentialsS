@@ -1,6 +1,6 @@
-From d20921812658c24b314a13403d30f90ceede0ba8 Mon Sep 17 00:00:00 2001
+From ab1986985dce8f9df0fa162b131d384ee34a9f18 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 24 Nov 2024 19:25:14 +0100
+Date: Tue, 10 Dec 2024 19:36:28 +0100
 Subject: [PATCH 1/9] Rebrand
 
 ---
@@ -32,7 +32,7 @@ Subject: [PATCH 1/9] Rebrand
  rename Essentials/src/{test => testaaa}/java/com/earth2me/essentials/utils/StringUtilTest.java (100%)
 
 diff --git a/Essentials/src/main/resources/plugin.yml b/Essentials/src/main/resources/plugin.yml
-index 51af179a9..c4bf9f8cd 100644
+index 8efb209ad..4b10c67e2 100644
 --- a/Essentials/src/main/resources/plugin.yml
 +++ b/Essentials/src/main/resources/plugin.yml
 @@ -8,6 +8,7 @@ description: Provides an essential, core set of commands for Bukkit.
@@ -89,7 +89,7 @@ index 854011f8d..1b31d233c 100644
  }
  
 diff --git a/build-logic/src/main/kotlin/essentials.base-conventions.gradle.kts b/build-logic/src/main/kotlin/essentials.base-conventions.gradle.kts
-index 7ae8c9c50..491de4a23 100644
+index bf8f526d5..c7dacead7 100644
 --- a/build-logic/src/main/kotlin/essentials.base-conventions.gradle.kts
 +++ b/build-logic/src/main/kotlin/essentials.base-conventions.gradle.kts
 @@ -35,7 +35,7 @@ tasks.test {
@@ -229,5 +229,5 @@ index 8a764dff0..68eab95ce 100644
  
  essentials {
 -- 
-2.45.1.windows.1
+2.47.1.windows.1
 
