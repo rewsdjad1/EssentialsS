@@ -1,6 +1,6 @@
-From 6076877544170aea5a9c3cb444b966dbb8d25b02 Mon Sep 17 00:00:00 2001
+From 5ae9f2adff88ea916e3b3305846b9820e1c49713 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Tue, 10 Dec 2024 19:36:29 +0100
+Date: Tue, 10 Dec 2024 20:01:48 +0100
 Subject: [PATCH 4/9] Replace scheduler
 
 ---
@@ -13,7 +13,7 @@ Subject: [PATCH 4/9] Replace scheduler
  .../essentials/EssentialsEntityListener.java  |  2 +-
  .../essentials/EssentialsPlayerListener.java  | 28 ++++++++--------
  .../com/earth2me/essentials/IEssentials.java  | 10 ++++++
- .../earth2me/essentials/RandomTeleport.java   |  2 +-
+ .../earth2me/essentials/RandomTeleport.java   |  7 ++--
  .../com/earth2me/essentials/Settings.java     |  6 ++--
  .../earth2me/essentials/TimedTeleport.java    | 12 +++----
  .../java/com/earth2me/essentials/User.java    |  4 +--
@@ -52,7 +52,7 @@ Subject: [PATCH 4/9] Replace scheduler
  EssentialsSpawn/src/main/resources/plugin.yml |  1 +
  .../earth2me/essentials/xmpp/XMPPManager.java |  2 +-
  EssentialsXMPP/src/main/resources/plugin.yml  |  1 +
- 48 files changed, 199 insertions(+), 142 deletions(-)
+ 48 files changed, 203 insertions(+), 143 deletions(-)
 
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java b/Essentials/src/main/java/com/earth2me/essentials/AsyncTeleport.java
 index 4d0cedd55..9aa6ef062 100644
@@ -465,18 +465,24 @@ index 598b1abe5..e7cc0168a 100644
  
      IWarps getWarps();
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/RandomTeleport.java b/Essentials/src/main/java/com/earth2me/essentials/RandomTeleport.java
-index 1529fd744..1b00e9e07 100644
+index 1529fd744..b790cf866 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/RandomTeleport.java
 +++ b/Essentials/src/main/java/com/earth2me/essentials/RandomTeleport.java
-@@ -147,7 +147,7 @@ public class RandomTeleport implements IConf {
+@@ -147,9 +147,12 @@ public class RandomTeleport implements IConf {
  
      // Prompts caching random valid locations, up to a maximum number of attempts.
      public void cacheRandomLocations(final String name) {
 -        ess.getServer().getScheduler().scheduleSyncDelayedTask(ess, () -> {
++        final Location center = getCenter(name); // Euphyllia
++        final double minRange = getMinRange(name); // Euphyllia
++        final double maxRange = getMaxRange(name); // Euphyllia
 +        ess.getRegionScheduler().run(ess, center, scheduledTask -> { // Euphyllia
              for (int i = 0; i < this.getFindAttempts(); ++i) {
-                 calculateRandomLocation(getCenter(name), getMinRange(name), getMaxRange(name)).thenAccept(location -> {
+-                calculateRandomLocation(getCenter(name), getMinRange(name), getMaxRange(name)).thenAccept(location -> {
++                calculateRandomLocation(center, minRange, maxRange).thenAccept(location -> { // Euphyllia
                      if (isValidRandomLocation(location)) {
+                         this.getCachedLocations(name).add(location);
+                     }
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/Settings.java b/Essentials/src/main/java/com/earth2me/essentials/Settings.java
 index f817dca92..3372cbd9e 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/Settings.java
@@ -876,7 +882,7 @@ index 6827650c5..051765f0a 100644
              for (final UUID u : ess.getUsers().getAllUserUUIDs()) {
                  final User user = ess.getUsers().loadUncachedUser(u);
 diff --git a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandskull.java b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandskull.java
-index e91a3addb..1b1f75737 100644
+index e91a3addb..efde35246 100644
 --- a/Essentials/src/main/java/com/earth2me/essentials/commands/Commandskull.java
 +++ b/Essentials/src/main/java/com/earth2me/essentials/commands/Commandskull.java
 @@ -105,7 +105,7 @@ public class Commandskull extends EssentialsCommand {
@@ -1336,7 +1342,7 @@ index 65764be4a..4c361b0b2 100644
 +folia-supported: true # Euphyllia
 \ No newline at end of file
 diff --git a/EssentialsSpawn/src/main/java/com/earth2me/essentials/spawn/EssentialsSpawnPlayerListener.java b/EssentialsSpawn/src/main/java/com/earth2me/essentials/spawn/EssentialsSpawnPlayerListener.java
-index 6f2b8902a..a97fa2706 100644
+index 6f2b8902a..4ceff2d54 100644
 --- a/EssentialsSpawn/src/main/java/com/earth2me/essentials/spawn/EssentialsSpawnPlayerListener.java
 +++ b/EssentialsSpawn/src/main/java/com/earth2me/essentials/spawn/EssentialsSpawnPlayerListener.java
 @@ -77,7 +77,7 @@ class EssentialsSpawnPlayerListener implements Listener {
@@ -1371,7 +1377,7 @@ index 6f2b8902a..a97fa2706 100644
  
          if (!spawnRandomly && !"none".equalsIgnoreCase(ess.getSettings().getNewbieSpawn())) {
 -            ess.scheduleSyncDelayedTask(new NewPlayerTeleport(user), 1L);
-+            eess.getEntityScheduler(player).runDelayed(ess, scheduledTask -> new NewPlayerTeleport(user).run(), null, 1L); // Euphyllia
++            ess.getEntityScheduler(player).runDelayed(ess, scheduledTask -> new NewPlayerTeleport(user).run(), null, 1L); // Euphyllia
          }
  
 -        ess.scheduleSyncDelayedTask(() -> {
