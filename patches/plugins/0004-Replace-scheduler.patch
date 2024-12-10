@@ -893,7 +893,7 @@ index e91a3addb..1b1f75737 100644
              skullMeta.setDisplayName("§fSkull of " + shortOwnerName);
  
 -            ess.scheduleSyncDelayedTask(() -> {
-+             ess.getEntityScheduler(user.getBase()).run(ess, scheduledTask1 -> { // Euphyllia
++            ess.getEntityScheduler(user.getBase()).run(ess, scheduledTask1 -> { // Euphyllia
                  stack.setItemMeta(skullMeta);
                  if (spawn) {
                      Inventories.addItem(receive.getBase(), stack);
