@@ -124,9 +124,14 @@ public class ConsoleInjector extends AbstractAppender {
             return;
         }
 
-        if (!jda.getSettings().getConsoleFilters().isEmpty()) {
-            for (final Pattern pattern : jda.getSettings().getConsoleFilters()) {
-                if (pattern.matcher(entry).find()) {
+        
+        List<Pattern> consoleFilters = jda.getSettings().getConsoleFilters();
+        boolean isWhitelist = jda.getSettings().isConsoleFilterWhitelist();
+
+        if (!consoleFilters.isEmpty()) {
+            for (Pattern pattern : consoleFilters) {
+                boolean matches = pattern.matcher(entry).find();
+                if ((isWhitelist && !matches) || (!isWhitelist && matches)) {
                     return;
                 }
             }
