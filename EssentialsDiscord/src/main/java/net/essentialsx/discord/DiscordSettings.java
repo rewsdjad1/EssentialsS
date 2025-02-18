@@ -185,6 +185,10 @@ public class DiscordSettings implements IConf {
         return consoleFilter;
     }
 
+    public boolean isConsoleFilterWhitelist() {
+        return config.getBoolean("console.whitelist-mode", true);
+    }
+
     public int getConsoleSkipDelay() {
         return config.getInt("console.skip-delay", 2);
     }
