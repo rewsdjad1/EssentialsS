@@ -14,11 +14,13 @@ import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.bukkit.Bukkit;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import static com.earth2me.essentials.I18n.tlLiteral;
 
@@ -124,21 +126,30 @@ public class ConsoleInjector extends AbstractAppender {
             return;
         }
 
-        
-        List<Pattern> consoleFilters = jda.getSettings().getConsoleFilters();
-        boolean isWhitelist = jda.getSettings().isConsoleFilterWhitelist();
+        final List<Pattern> consoleFilters = jda.getSettings().getConsoleFilters();
+        final boolean isWhitelist = jda.getSettings().isConsoleFilterWhitelist();
 
         if (!consoleFilters.isEmpty()) {
-            for (Pattern pattern : consoleFilters) {
-                boolean matches = pattern.matcher(entry).find();
-                if ((isWhitelist && !matches) || (!isWhitelist && matches)) {
-                    return;
+            boolean matchedAFilter = false;
+            for (final Pattern pattern : consoleFilters) {
+                final Matcher matcher = pattern.matcher(entry);
+                if (matcher.find()) {
+                    matchedAFilter = true;
+                    break; // Optimization:  Exit loop when first match found.
                 }
+            }
+            if (!isWhitelist && matchedAFilter) {
+                return; // Blacklist:  We matched, so filter the message.
+            }
+            if (isWhitelist && !matchedAFilter) {
+                return; // Whitelist: We didn't match anything, so filter the message.
             }
         }
 
-        final String[] loggerNameSplit = event.getLoggerName().split("\\.");
-        final String loggerName = loggerNameSplit[loggerNameSplit.length - 1].trim();
+        String loggerName = event.getLoggerName();
+        if (loggerName.contains(".")) {
+            loggerName = loggerName.substring(loggerName.lastIndexOf(".") + 1).trim();
+        }
 
         if (!loggerName.isEmpty()) {
             entry = "[" + loggerName + "] " + entry;
