@@ -14,14 +14,22 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 public abstract class PaperChatListenerProvider implements Listener {
+    private final boolean formatParsing;
     private final LegacyComponentSerializer serializer;
     private final Map<AsyncChatEvent, PaperChatEvent> eventMap = new IdentityHashMap<>();
 
     public PaperChatListenerProvider() {
+        this(true);
+    }
+
+    public PaperChatListenerProvider(final boolean formatParsing) {
+        this.formatParsing = formatParsing;
         this.serializer = LegacyComponentSerializer.builder()
                 .flattener(ComponentFlattener.basic())
                 .extractUrls(AbstractChatEvent.URL_PATTERN)
-                .useUnusualXRepeatedCharacterHexFormat().build();
+                .useUnusualXRepeatedCharacterHexFormat()
+                .hexColors()
+                .build();
     }
 
     public void onChatLowest(final AbstractChatEvent event) {
@@ -56,6 +64,10 @@ public abstract class PaperChatListenerProvider implements Listener {
         onChatHighest(paperChatEvent);
 
         if (event.isCancelled()) {
+            return;
+        }
+
+        if (!formatParsing) {
             return;
         }
 
